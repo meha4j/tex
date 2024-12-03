@@ -1,0 +1,26 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}ifndef FEM\PYGZus{}VTX\PYGZus{}H}
+\PYG{c+cp}{\PYGZsh{}define FEM\PYGZus{}VTX\PYGZus{}H}
+
+\PYG{c+c1}{// Узел}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+c1}{// Координата по X}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{c+c1}{// Координата по Y}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{c+c1}{// Координата по Z}
+\PYG{+w}{  }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{z}\PYG{p}{;}
+\PYG{p}{\PYGZcb{};}
+
+\PYG{c+c1}{// Подпрограмма выделения памяти под узел}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{vtx\PYGZus{}new}\PYG{p}{();}
+
+\PYG{c+c1}{// Подпрограмма чтения узла из строки}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{vtx\PYGZus{}get}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{buf}\PYG{p}{);}
+
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{vtx\PYGZus{}cls}\PYG{p}{(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{);}
+
+\PYG{c+cp}{\PYGZsh{}endif  }\PYG{c+c1}{// FEM\PYGZus{}VTX\PYGZus{}H}
+\end{Verbatim}

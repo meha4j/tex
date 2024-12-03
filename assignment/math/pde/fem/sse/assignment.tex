@@ -1,0 +1,885 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[
+  margin=1in
+]{geometry}
+
+\usepackage[T1, T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{minted}
+\usepackage{hyperref}
+\usepackage{tabularray}
+\usepackage{mathtools, nccmath}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{circuitikz}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \textsc{Новосибирский государственный технический университет}\par
+  \vspace{1mm}
+  Кафедра прикладной математики\par
+  \vspace{4cm}
+  \textsc{Курсовой проект}\par
+  {\huge\bfseries Метод конечных элементов для эллиптических задач\par}
+  \vspace{1cm}
+  {\scriptsize ФПМИ, ПМ-24\par}
+  \vspace{1mm}
+  {\itshape\large Параскун И.\par}
+  \vfill
+  {\small преподаватели\par}
+  \vspace{2mm}
+  \textsc{Рояк М. Э., д.т.н., профессор}\par
+  \vspace{1mm}
+  \textsc{Сивенкова А. П., ассистент}\par
+  \vfill
+  \large{Новосибирск, 2024}
+\end{titlepage}
+
+\newpage
+
+\setcounter{page}{2}
+\tableofcontents
+
+\newpage
+
+\section{Постановка задачи}
+Построить МКЭ для уравнения эллиптического типа
+
+\begin{align}
+  \label{1} -\nabla(\lambda\nabla u) + \gamma u = f, \ f = \frac{\partial{g}}{\partial{x}}
+\end{align}
+
+\noindent в декартовой системе координат
+
+\begin{align}
+  -\frac{\partial}{\partial{x}}(\lambda \frac{\partial{u}}{\partial{x}})
+    -\frac{\partial}{\partial{y}}(\lambda \frac{\partial{u}}{\partial{y}})
+    -\frac{\partial}{\partial{z}}(\lambda \frac{\partial{u}}{\partial{z}})
+    + \gamma u = f
+\end{align}
+
+\vspace{5mm}
+\noindent с учётом следующих условий:
+
+\begin{itemize}
+\item Краевые условия всех типов:
+
+\begin{fleqn}[20pt]
+\begin{align}
+  &u|_{S_1} = u_g \\[1ex]
+  &\lambda \frac{\partial{u}}{\partial{n}}\bigg\rvert_{S_2} = \theta \\[1ex]
+  &\lambda \frac{\partial{u}}{\partial{n}}\bigg\rvert_{S_3} + 
+    \beta (u\rvert_{S_3} - u{\beta}) = 0
+\end{align}
+\end{fleqn}
+
+\item Базисные функции - линейные на прямоугольных параллелепипедах.
+\item Коэффициент диффузии - кусочно-постоянная функция.
+\item Матрицы в разреженном строчном формате.
+\item Решение СЛАУ с использованием ЛОС с ILU факторизацией.
+\end{itemize}
+
+\section{Теоретическая часть}
+\subsection{Вариационная постановка}
+
+Эквивалентная вариационная постановка в форме уравнения Галёркина
+для уравнения \ref{1}:
+
+\begin{align}
+  \begin{split}\label{2}
+     \int_{\Omega}\lambda\nabla{u}\cdot\nabla{v_0}d\Omega 
+  + &\int_{\Omega}\gamma u v_0 d\Omega
+  +  \int_{S_3}\beta u v_0 dS = \\
+  = &\int_{\Omega}fv_0d\Omega + 
+       \int_{S_2}\theta v_0dS + 
+       \int_{S_3}\beta u_{\beta}v_0dS,
+      \quad \forall v_0 \in H_0^1
+  \end{split}
+\end{align}
+
+\noindent Аппроксимация уравнения \ref{2} на конечномерных подпространствах $V_g^h$ и $V_0^h$ 
+получается заменой функций $u \in H_g^1$ и $v_0 \in H_0^1$ 
+на функции $u^h \in V_g^h$ и $v_0^h \in V_0^h$ соответственно:
+
+\begin{align}
+  \begin{split}\label{3}
+       \int_{\Omega}\lambda\nabla{u^h}\cdot\nabla{v_0^h}d\Omega 
+    + &\int_{\Omega}\gamma u^h v_0^h d\Omega
+    +  \int_{S_3}\beta u^h v_0^h dS = \\
+    = &\int_{\Omega}fv_0^hd\Omega + 
+       \int_{S_2}\theta v_0^hdS + 
+       \int_{S_3}\beta u_{\beta}v_0^hdS,
+      \quad \forall v_0^h \in V_0^h
+  \end{split}
+\end{align}
+
+\subsection{Конечноэлементная СЛАУ}
+
+\noindent Раскладывая функции $u^h$ и $v_0^h$ по базису, переходим к конечноэлементной СЛАУ
+
+\begin{align}
+  \begin{split}
+    \sum_{j=1}^{n}&(
+      \int_{\Omega}\lambda\nabla{\psi_j}\cdot\nabla{\psi_i}d\Omega 
+    + \int_{\Omega}\gamma \psi_j \psi_i d\Omega
+    + \int_{S_3}\beta \psi_j \psi_i dS
+  ) q_j = \\
+    &= \int_{\Omega}f \psi_i d\Omega 
+    + \int_{S_2}\theta \psi_i dS 
+    + \int_{S_3}\beta u_{\beta} \psi_i dS,
+  \quad i \in N_0
+  \end{split} \\[1ex]
+  \sum_{j}&(q_j \psi_j)\bigg\rvert_{S_1} = u_g
+\end{align}
+
+\vspace{3mm}
+\noindent или в матричном виде
+
+\begin{align}
+    \textbf{Aq = b}
+\end{align}
+
+\vspace{3mm}
+\noindent где компоненты матрицы $\textbf{A}$ и вектора $\textbf{b}$ определяются соотношениями
+
+\begin{align}
+  &A_{ij} = 
+  \begin{cases} 
+      \int_{\Omega}\lambda\nabla{\psi_j}\cdot\nabla{\psi_i}d\Omega 
+        + \int_{\Omega}\gamma \psi_j \psi_i d\Omega
+        + \int_{S_3}\beta \psi_j \psi_i dS & i \in N_0 \\
+      \delta_{ij} & i \notin N_0 \\
+  \end{cases} \\[1ex]
+  &b_i =
+  \begin{cases} 
+      \int_{\Omega}f \psi_i d\Omega 
+        + \int_{S_2}\theta \psi_i dS 
+        + \int_{S_3}\beta u_{\beta} \psi_i dS & i \in N_0 \\
+      u_g(\textbf{x}_i) & i \notin N_0 \\
+  \end{cases}
+\end{align}
+
+\vspace{3mm}
+\noindent Преобразование в сумму интегралов по конечным элементам даёт более удобную форму записи:
+
+\begin{align}
+  &G_{ij} = \int_{\Omega}\lambda\nabla{\psi_i}\cdot\nabla{\psi_j}d\Omega =
+            \sum_{k}\int_{\Omega_k}\lambda\nabla{\psi_i}\cdot\nabla{\psi_j}d\Omega \\
+  &M_{ij} = \int_{\Omega}\gamma \psi_i \psi_j d\Omega =
+            \sum_{k}\int_{\Omega_k}\gamma \psi_i \psi_j d\Omega \\
+  &M_{ij}^{S_3} = \int_{S_3}\beta \psi_i \psi_j dS =
+                  \sum_{l}\int_{S_3^l}\beta \psi_i \psi_j dS \\
+  &b_{i} = \int_{\Omega}f\psi_{i}d\Omega = 
+           \sum_{k}\int_{\Omega_k}f\psi_{i}d\Omega \\
+  \label{4} &b_{i}^{S_2} = \int_{S_2}\theta\psi_{i}dS = 
+                            \sum_{p}\int_{S_2^p}\theta\psi_{i}dS \\
+  \label{5} &b_{i}^{S_3} = \int_{S_3}\beta u_{\beta} \psi_{i}dS = 
+                            \sum_{l}\int_{S_3^l}\beta u_{\beta}\psi_{i}dS
+\end{align}
+
+\subsection{Трилинейные базисные функции}
+
+Трилинейные базисные функции на прямоугольном параллелепипеде $\Omega_{psr}$ строятся следующим образом:
+
+\begin{align}
+  \label{6} X_1(x) &= \frac{x_{p+1} - x}{h_x}, & X_2(x) &= \frac{x-x_p}{h_x}, & h_x &= x_{p+1}-x_p, \\
+  \label{7} Y_1(y) &= \frac{y_{s+1} - y}{h_y}, & Y_2(y) &= \frac{y-y_s}{h_y}, & h_y &= y_{s+1}-y_s, \\
+  \label{8} Z_1(z) &= \frac{z_{r+1} - z}{h_z}, & Z_2(z) &= \frac{z-z_r}{h_z}, & h_z &= z_{r+1}-z_r.
+\end{align}
+
+\noindent Локальные базисные функции представляются в виде произведения функций \ref{6}, \ref{7} и \ref{8}:
+
+\begin{align}
+  \label{9} \hat{\psi_i} = X_{\mu(i)}Y_{\nu(i)}Z_{\vartheta(i)}
+\end{align}
+
+\noindent гдe
+
+\begin{align}
+  &\mu(i) = ((i-1)\ mod\ 2) + 1 \\
+  &\nu(i) = \left(\left[ \frac{i-1}{2} \right] mod\ 2\right) + 1 \\
+  &\vartheta(i) = \left[ \frac{i-1}{4} \right] + 1
+\end{align}
+
+\subsection{Элементы локальных матриц}
+
+\noindent Выражение для вычисления компонент локальных матриц на прямоугольном параллелепипеде $\Omega_{psr}$:
+
+\begin{align}
+  &\hat{G}_{ij} = \int_{x_p}^{x_{p+1}}
+                  \int_{y_s}^{y_{s+1}}
+                  \int_{z_r}^{z_{r+1}}
+                    \lambda(
+                      \frac{\partial{\hat{\psi_i}}}{\partial{x}}
+                      \frac{\partial{\hat{\psi_j}}}{\partial{x}} +
+                      \frac{\partial{\hat{\psi_i}}}{\partial{y}}
+                      \frac{\partial{\hat{\psi_j}}}{\partial{y}} +
+                      \frac{\partial{\hat{\psi_i}}}{\partial{z}}
+                      \frac{\partial{\hat{\psi_j}}}{\partial{z}}
+                    )dxdydz \\[1ex]
+  &\hat{M}_{ij} = \int_{x_p}^{x_{p+1}}
+                  \int_{y_s}^{y_{s+1}}
+                  \int_{z_r}^{z_{r+1}}
+                  \gamma\hat{\psi}_i\hat{\psi}_j dxdydz \\[1ex]
+  &\hat{M}_{ij}^{S_3} = \int_{\xi_1}^{\xi_2}
+                        \int_{\zeta_1}^{\zeta_2}
+                        \beta\psi_{i}\psi_{j} d\xi d\zeta
+\end{align}
+
+\vspace{5mm}
+\noindent Учитывая вид базисных функций \ref{9}:
+
+\begin{align*}
+  \hat{\textbf{G}}^x &= \frac{1}{h_x}\textbf{G}^c & \hat{\textbf{M}}^x &= h_x\textbf{M}^c \\
+  \hat{\textbf{G}}^y &= \frac{1}{h_y}\textbf{G}^c & \hat{\textbf{M}}^y &= h_y\textbf{M}^c \\
+  \hat{\textbf{G}}^z &= \frac{1}{h_z}\textbf{G}^c & \hat{\textbf{M}}^z &= h_z\textbf{M}^c
+\end{align*}
+
+\noindent где
+
+\begin{align}
+  \textbf{G}^c &= 
+    \begin{pmatrix}
+       1 & -1 \\
+      -1 &  1
+    \end{pmatrix} &
+  \textbf{M}^c &= \frac{1}{6}
+    \begin{pmatrix}
+      2 & 1 \\
+      1 & 2
+    \end{pmatrix}
+\end{align}
+
+\vspace{5mm}
+\noindent Тогда
+
+\begin{align}
+  \begin{split}
+    \hat{G}_{ij} = \hat{\lambda}(
+      &\hat{G}_{\mu(i)\mu(j)}^{x} \hat{M}_{\nu(i)\nu(j)}^{y} \hat{M}_{\vartheta(i)\vartheta(j)}^{z} + \\
+      &\hat{M}_{\mu(i)\mu(j)}^{x} \hat{G}_{\nu(i)\nu(j)}^{y} \hat{M}_{\vartheta(i)\vartheta(j)}^{z} + \\
+      &\hat{M}_{\mu(i)\mu(j)}^{x} \hat{M}_{\nu(i)\nu(j)}^{y} \hat{G}_{\vartheta(i)\vartheta(j)}^{z}
+    )
+  \end{split} \\[1ex]
+  \hat{M}_{ij} = \hat{\gamma}(
+    &\hat{M}_{\mu(i)\mu(j)}^x 
+     \hat{M}_{\nu(i)\nu(j)}^y 
+     \hat{M}_{\vartheta(i)\vartheta(j)}^z
+  ) \\[1ex]
+  \hat{M}_{ij}^{S_3} = \hat{\beta}(
+    &\hat{M}_{\mu(i)\mu(j)}^{\xi} 
+     \hat{M}_{\nu(i)\nu(j)}^{\zeta} 
+  )
+\end{align}
+
+\subsection{Элементы локальных векторов}
+
+\noindent Выражение для вычисления компонент локальных векторов на 
+прямоугольном параллелепипеде $\Omega_{psr}$:
+
+\begin{align}
+  \begin{split}
+    \hat{b}_i 
+      &= \int_{x_p}^{x_{p+1}}
+        \int_{y_s}^{y_{s+1}}
+        \int_{z_r}^{z_{r+1}}
+          f\hat{\psi}_i dxdydz \\
+      &= \sum_{j}\hat{q}_j^g
+        \int_{x_p}^{x_{p+1}}
+        \int_{y_s}^{y_{s+1}}
+        \int_{z_r}^{z_{r+1}}
+          \frac{\partial{\hat{\psi}_j}}{\partial{x}}\hat{\psi}_i dxdydz
+  \end{split}
+\end{align}
+
+\vspace{3mm}
+\noindent Учитывая вид базисных функций \ref{9}:
+
+\begin{align}
+  \begin{split}
+    \hat{b}_i 
+    = \sum_{j}\hat{q}_j^g
+      \int_{x_p}^{x_{p+1}}&X_{\mu(i)}\frac{\partial{X_{\mu(j)}}}{\partial{x}}dx
+      \int_{y_s}^{y_{s+1}}Y_{\nu(i)}Y_{\nu(j)}dy
+      \int_{z_r}^{z_{r+1}}Z_{\vartheta(i)}Z_{\vartheta(j)}dz = \\
+    = &\sum_{j}\hat{q}_j^g 
+      X_{\mu(i)\mu(j)} 
+      \hat{M}_{\nu(i)\nu(j)}^y 
+      \hat{M}_{\vartheta(i)\vartheta(j)}^z
+  \end{split}
+\end{align}
+
+\noindent где
+
+\begin{align}
+  \textbf{X} = 
+    \begin{pmatrix}
+      -\frac{1}{2} & \frac{1}{2} \\
+      -\frac{1}{2} & \frac{1}{2}
+    \end{pmatrix}
+\end{align}
+
+\vspace{3mm}
+\noindent Для правой части, заданной в явном виде:
+
+\begin{align}
+  \begin{split}
+    \hat{b}_i 
+    = \sum_{j}\hat{f}_j
+      \int_{x_p}^{x_{p+1}}&X_{\mu(i)}Y_{\mu(j)}dx
+      \int_{y_s}^{y_{s+1}}Y_{\nu(i)}Y_{\nu(j)}dy
+      \int_{z_r}^{z_{r+1}}Z_{\vartheta(i)}Z_{\vartheta(j)}dz = \\
+    = &\sum_{j}\hat{f}_j 
+      \hat{M}_{\mu(i)\mu(j)}^x 
+      \hat{M}_{\nu(i)\nu(j)}^y 
+      \hat{M}_{\vartheta(i)\vartheta(j)}^z
+  \end{split}
+\end{align}
+
+\vspace{3mm}
+\noindent Вклад краевых условий \ref{4} и \ref{5}:
+
+\begin{align}
+  &\hat{b}_{i}^{S_2} =  \int_{\xi_1}^{\xi_2}
+                        \int_{\zeta_1}^{\zeta_2}
+                        \hat{\theta}\psi_{i} d\xi d\zeta \\
+  &\hat{b}_{i}^{S_3} =  \int_{\xi_1}^{\xi_2}
+                      \int_{\zeta_1}^{\zeta_2}
+                      \hat{\beta}\hat{u}_{\beta}\psi_{i} d\xi d\zeta
+\end{align}
+
+\begin{align}
+  &\hat{g}^{ip} 
+    = \sum_{i=1}^{8}
+        g(\hat{x}_i, \hat{y}_i, \hat{z}_i)\hat{\psi}_i(x, y, z)
+    = \sum_{i=1}^{8}
+        \hat{q}_{i}^{g}\hat{\psi}_i(x, y, z) \\
+  &\hat{\theta}^{ip} 
+    = \sum_{i=1}^{4}
+        \hat{\theta}(\hat{x}_i, \hat{y}_i, \hat{z}_i)\hat{\psi}_i(x, y, z)
+    = \sum_{i=1}^{4}
+        \hat{\theta}_{i}\hat{\psi}_i(x, y, z) \\
+  &\hat{u}_{\beta}^{ip} 
+    = \sum_{i=1}^{4}
+        \hat{u}_{\beta}(\hat{x}_i, \hat{y}_i, \hat{z}_i)\hat{\psi}_i(x, y, z)
+    = \sum_{i=1}^{4}
+        \hat{u}_{\beta i}\hat{\psi}_i(x, y, z)
+\end{align}
+
+\begin{align}
+  \begin{split}
+    \hat{b}_i^{S_2} 
+      = \hat{\theta}_1 \hat{M}_{\mu(i)\mu(1)}^{\xi} \hat{M}_{\nu(i)\nu(1)}^{\chi} + 
+        \hat{\theta}_2 \hat{M}_{\mu(i)\mu(2)}^{\xi} \hat{M}_{\nu(i)\nu(2)}^{\chi} + \\
+      + \hat{\theta}_3 \hat{M}_{\mu(i)\mu(3)}^{\xi} \hat{M}_{\nu(i)\nu(3)}^{\chi} +
+        \hat{\theta}_4 \hat{M}_{\mu(i)\mu(4)}^{\xi} \hat{M}_{\nu(i)\nu(4)}^{\chi}
+  \end{split} \\[1ex]
+  \begin{split}
+    \hat{b}_i^{S_3} 
+      = \hat{\beta}(
+        \hat{u}_{\beta 1} \hat{M}_{\mu(i)\mu(1)}^{\xi} \hat{M}_{\nu(i)\nu(1)}^{\chi} + 
+        \hat{u}_{\beta 2} \hat{M}_{\mu(i)\mu(2)}^{\xi} \hat{M}_{\nu(i)\nu(2)}^{\chi} + \\
+      + \hat{u}_{\beta 3} \hat{M}_{\mu(i)\mu(3)}^{\xi} \hat{M}_{\nu(i)\nu(3)}^{\chi} +
+        \hat{u}_{\beta 4} \hat{M}_{\mu(i)\mu(4)}^{\xi} \hat{M}_{\nu(i)\nu(4)}^{\chi}
+      )
+  \end{split}
+\end{align}
+
+\section{Описание разработанных программ}
+\subsection{Узел}
+
+\inputminted[firstline=4, lastline=20]{c}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/include/fem/sse/vtx.h}
+
+\subsection{Конечный элемент}
+
+\inputminted[firstline=9, lastline=45]{c}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/include/fem/sse/hex.h}
+
+\subsection{Грань}
+
+\inputminted[firstline=8, lastline=77]{c}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/include/fem/sse/fce.h}
+
+\subsection{Структура алгоритма}
+
+\inputminted[firstline=9, lastline=53]{c}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/include/fem/sse/fem.h}
+
+\section{Описание тестирования программ}
+\subsection{Тестирование на одном конечном элементе}
+\subsubsection{Описание задачи}
+
+Простейшая расчетная область для тестирования трилинейных элементов выглядит следующим образом:
+
+\vspace{5mm}
+\begin{figure}[H]
+\centering
+\resizebox{1\textwidth}{!}{%
+\begin{circuitikz}
+\tikzstyle{every node}=[font=\large]
+
+\node at (7.5,8) [circ] {};
+\node at (16.25,8) [circ] {};
+\node at (7.5,9.25) [circ] {};
+\node at (16.25,9.25) [circ] {};
+\node at (21.25,10.5) [circ] {};
+\node at (21.25,11.75) [circ] {};
+\node at (12.5,10.5) [circ] {};
+\node at (12.5,11.75) [circ] {};
+\draw [line width=2pt, short] (7.5,8) -- (16.25,8);
+\draw [line width=2pt, short] (7.5,9.25) -- (7.5,8);
+\draw [line width=2pt, short] (16.25,9.25) -- (16.25,8);
+\draw [line width=2pt, short] (7.5,9.25) -- (16.25,9.25);
+\draw [line width=2pt, short] (16.25,8) -- (21.25,10.5);
+\draw [line width=2pt, short] (16.25,9.25) -- (21.25,11.75);
+\draw [line width=2pt, short] (21.25,11.75) -- (21.25,10.5);
+\draw [line width=2pt, short] (7.5,9.25) -- (12.5,11.75);
+\draw [line width=2pt, short] (12.5,11.75) -- (21.25,11.75);
+\draw [line width=2pt, dashed] (7.5,8) -- (12.5,10.5);
+\draw [line width=2pt, dashed] (12.5,11.75) -- (12.5,10.5);
+\draw [line width=2pt, dashed] (12.5,10.5) -- (21.25,10.5);
+\draw [line width=0.6pt, dashed] (7.5,8) -- (5,6.75);
+\draw [line width=0.6pt, dashed] (16.25,8) -- (13.75,6.75);
+\draw [line width=0.6pt, dashed] (16.25,8) -- (18,8);
+\draw [line width=0.6pt, dashed] (21.25,10.5) -- (23,10.5);
+\draw [line width=0.6pt, dashed] (7.5,9.25) -- (6.25,9.25);
+\node [font=\normalsize] at (7.5,8) {\textbf{1}};
+\node [font=\normalsize] at (7.5,8) {\textbf{1}};
+\draw [line width=0.5pt, ->, >=Stealth] (1.5,5) -- (4,6.25);
+\draw [line width=0.5pt, ->, >=Stealth] (1.5,5) -- (1.5,8.25);
+\node [font=\large] at (7.25,8.25) {\textbf{1}};
+\node [font=\large] at (16,8.25) {\textbf{2}};
+\node [font=\large] at (12.25,10.75) {\textbf{3}};
+\node [font=\large] at (21,10.75) {\textbf{4}};
+\node [font=\large] at (7.25,9.5) {\textbf{5}};
+\node [font=\large] at (16,9.5) {\textbf{6}};
+\node [font=\large] at (12.25,12) {\textbf{7}};
+\node [font=\large] at (21,12) {\textbf{8}};
+\node [font=\large] at (5,7.25) {10};
+\node [font=\large] at (13.75,7.25) {20};
+\node [font=\large] at (18.25,7.75) {0};
+\node [font=\large] at (23.25,10.25) {8};
+\node [font=\large] at (6,9.5) {1};
+\node [font=\large] at (1,8.25) {z};
+\node [font=\large] at (3.75,6.75) {y};
+\draw [line width=0.5pt, ->, >=Stealth] (1.5,5) -- (4.75,5);
+\node [font=\large] at (4.75,4.5) {x};
+\end{circuitikz}
+}%
+\label{fig:simple}
+\end{figure}
+
+\noindent где
+
+\begin{align*}
+  S_2^1 &= \left[ 1, 3, 5, 7 \right] \\
+  S_2^2 &= \left[ {3, 4, 7, 8} \right] \\
+  S_2^3 &= \left[ {5, 6, 7, 8} \right] \\
+  S_3^1 &= \left[ {2, 4, 6, 8} \right] \\
+  S_3^2 &= \left[ {1, 2, 5, 6} \right] \\
+  S_3^3 &= \left[ {1, 2, 3, 4} \right]
+\end{align*}
+
+\noindent Значения коэффициентов $\lambda$ и $\gamma$ выбраны в виде:
+
+\begin{align}
+  \lambda &= 5 & \gamma &= 0.4
+\end{align}
+
+\noindent Решение - полином вида
+
+\begin{align}
+  u = 5 + 0.2x + y + 30z + 0.5xy + xz + 10yz + xyz
+\end{align}
+
+\noindent Исходя из этого
+
+\begin{align}
+  &f = 0.4(5 + 0.2x + y + 30z + 0.5xy + xz + 10yz + xyz) \\[1ex]
+  &g = 2x + 0.04x^2 + 0.4xy + 12xz + 0.1x^2y + 0.2x^2z + 4xyz + 0.2x^2yz \\[1ex]
+  &\theta|_{S_2^1} = -1 - 2.5y - 5z - 5yz \\[1ex]
+  &\theta|_{S_2^2} = 5 + 2.5x + 50z + 5xz \\[1ex]
+  &\theta|_{S_2^3} = 150 + 5x + 50y + 5xy
+\end{align}
+
+\noindent При условии, что $\beta = 10$:
+
+\begin{align}
+  &u_{\beta}|_{S_3^1} = 9.1 + 11.25y + 50.5z + 30.5yz \\[1ex]
+  &u_{\beta}|_{S_3^2} = 4.5 - 0.05x + 25z + 0.5xz \\[1ex]
+  &u_{\beta}|_{S_3^3} = -10 - 0.3x - 4y
+\end{align}
+
+\subsubsection{Подпрограмма тестирования}
+
+\inputminted[firstline=38, lastline=122]{cpp}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/test/SolidStateEquationSingleElementTest.cc}
+
+\subsubsection{Результат}
+
+\begin{minted}{console}
+7.0000000e+00
+9.0000000e+00
+5.5000000e+01
+9.7000000e+01
+4.7000000e+01
+5.9000000e+01
+2.5500000e+02
+3.8700000e+02
+\end{minted}
+
+\subsection{Тестирование на сетке с разрывом коэффициентов}
+\subsubsection{Описание задачи}
+
+\vspace{5mm}
+\begin{figure}[H]
+\centering
+\resizebox{1\textwidth}{!}{%
+\begin{circuitikz}
+\tikzstyle{every node}=[font=\normalsize]
+\node at (7.5,8.5) [circ] {};
+\node at (10,9.75) [circ] {};
+\node at (11.25,8.5) [circ] {};
+\node at (13.75,9.75) [circ] {};
+\node at (17.5,8.5) [circ] {};
+\node at (20,9.75) [circ] {};
+\node at (7.5,11) [circ] {};
+\node at (11.25,11) [circ] {};
+\node at (17.5,11) [circ] {};
+\node at (20,12.25) [circ] {};
+\node at (10,12.25) [circ] {};
+\node at (7.5,16) [circ] {};
+\node at (11.25,16) [circ] {};
+\draw [ line width=1.5pt](7.5,16) to[short] (7.5,8.5);
+\draw [line width=1.5pt, short] (7.5,8.5) -- (17.5,8.5);
+\draw [line width=1.5pt, short] (17.5,11) -- (17.5,8.5);
+\draw [line width=1.5pt, short] (20,12.25) -- (20,9.75);
+\draw [line width=1.5pt, short] (11.25,11) -- (11.25,8.5);
+\draw [line width=1.5pt, short] (11.25,16) -- (11.25,11);
+\draw [line width=1.5pt, short] (7.5,16) -- (11.25,16);
+\draw [line width=1.5pt, dashed] (11.25,8.5) -- (13.75,9.75);
+\draw [line width=1.5pt, dashed] (10,9.75) -- (7.5,8.5);
+\draw [line width=1.5pt, dashed] (10,9.75) -- (20,9.75);
+\node at (13.75,17.25) [circ] {};
+\node at (10,17.25) [circ] {};
+\node at (13.75,12.25) [circ] {};
+\draw [line width=1.5pt, short] (7.5,16) -- (10,17.25);
+\draw [line width=1.5pt, short] (11.25,16) -- (13.75,17.25);
+\draw [line width=1.5pt, dashed] (13.75,12.25) -- (13.75,9.75);
+\draw [line width=1.5pt, dashed] (10,12.25) -- (13.75,12.25);
+\draw [line width=1.5pt, dashed] (10,12.25) -- (7.5,11);
+\draw [line width=1.5pt, dashed] (10,17.25) -- (10,9.75);
+\draw [line width=1.5pt, short] (10,17.25) -- (13.75,17.25);
+\draw [line width=1.5pt, short] (7.5,11) -- (17.5,11);
+\draw [line width=1.5pt, short] (20,12.25) -- (17.5,11);
+\draw [line width=1.5pt, short] (17.5,8.5) -- (20,9.75);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,6) -- (5,6);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,6) -- (2.5,8.5);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,6) -- (4.5,7);
+\node [font=\normalsize] at (2.25,8.5) {z};
+\node [font=\normalsize] at (5,5.75) {x};
+\node [font=\normalsize] at (4.25,7.25) {y};
+\node [font=\normalsize] at (5,7) {};
+\draw [line width=1pt, dashed] (10,9.75) -- (12,9.75);
+\draw [line width=0.3pt, dashed] (7.5,16) -- (6.25,16);
+\draw [line width=0.3pt, dashed] (7.5,11) -- (6.25,11);
+\draw [line width=0.3pt, dashed] (7.5,8.5) -- (6.5,8);
+\draw [line width=0.3pt, dashed] (17.5,8.5) -- (18.75,8.5);
+\draw [line width=0.3pt, dashed] (20,9.75) -- (21.25,9.75);
+\draw [line width=0.3pt, dashed] (10,9.75) -- (5,7.25);
+\draw [line width=0.3pt, dashed] (11.25,8.5) -- (8.75,7.25);
+\draw [line width=0.3pt, dashed] (17.5,8.5) -- (15,7.25);
+\draw [line width=1.5pt, short] (13.75,17.25) -- (13.75,12.25);
+\draw [line width=1.5pt, short] (13.75,12.25) -- (20,12.25);
+\draw [line width=1.5pt, short] (11.25,11) -- (13.75,12.25);
+\node [font=\normalsize] at (11,8.75) {\textbf{2}};
+\node [font=\normalsize] at (7.25,8.75) {\textbf{1}};
+\node [font=\normalsize] at (17.25,8.75) {\textbf{3}};
+\node [font=\normalsize] at (9.75,10) {\textbf{4}};
+\node [font=\normalsize] at (13.5,10) {\textbf{5}};
+\node [font=\normalsize] at (19.75,10) {\textbf{6}};
+\node [font=\normalsize] at (7.25,11.25) {\textbf{7}};
+\node [font=\normalsize] at (11,11.25) {\textbf{8}};
+\node [font=\normalsize] at (17.25,11.25) {\textbf{9}};
+\node [font=\normalsize] at (9.5,12.5) {\textbf{10}};
+\node [font=\normalsize] at (13.25,12.5) {\textbf{11}};
+\node [font=\normalsize] at (19.75,12.5) {\textbf{12}};
+\node [font=\normalsize] at (7.25,16.25) {\textbf{13}};
+\node [font=\normalsize] at (11,16.25) {\textbf{14}};
+\node [font=\normalsize] at (9.75,17.5) {\textbf{15}};
+\node [font=\normalsize] at (13.5,17.5) {\textbf{16}};
+\node [font=\normalsize] at (5.25,7.75) {0};
+\node [font=\normalsize] at (9,7.75) {1};
+\node [font=\normalsize] at (15.25,7.75) {5};
+\node [font=\normalsize] at (19,8.25) {0};
+\node [font=\normalsize] at (21.5,9.5) {2.5};
+\node [font=\normalsize] at (6.25,11.25) {2};
+\node [font=\normalsize] at (6.25,16.25) {7};
+\node [font=\normalsize] at (8.75,10) {$\Omega_1$};
+\node [font=\normalsize] at (15.5,10.25) {$\Omega_2$};
+\node [font=\normalsize] at (8.75,13.75) {$\Omega_3$};
+\end{circuitikz}
+}%
+
+\label{fig:cff}
+\end{figure}
+
+\noindent Значения коэффициентов $\lambda$ и $\gamma$ выбраны в виде:
+
+\begin{align*}
+  &\lambda = 
+  \begin{cases} 
+      1, & \Omega^1 \\
+      2, & \Omega^2 \\
+      \frac{2}{3}, & \Omega^3
+  \end{cases}
+  &\gamma = 
+  \begin{cases} 
+      4, & \Omega^1 \\
+      0, & \Omega^2 \\
+      1, & \Omega^3
+  \end{cases}
+\end{align*}
+
+\noindent Решение - полином вида
+
+\vspace{1mm}
+\begin{align*}
+  &u = 
+  \begin{cases} 
+      2x(yz + z + y + 1), & \Omega^1 \\
+      1 + x + y + z + xy + xz + yz + xyz, & \Omega^2 \\
+      3xz(y + 1), & \Omega^3
+  \end{cases}
+\end{align*}
+\vspace{1mm}
+
+\noindent При условии, что $\beta = 2$: 
+
+\begin{align*}
+  S_1 &= \left[ 1, 4, 7, 10, 13, 15 \right] & u|_{S_1} &= 0 \\
+  S_2^1 &= \left[ 1, 2, 7, 8 \right] & \theta|_{S_2^1} &= -2x(z + 1) \\
+  S_2^2 &= \left[ 7, 8, 13, 14 \right] & \theta|_{S_2^2} &= -2xz \\
+  S_2^3 &= \left[ 2, 3, 8, 9 \right] & \theta|_{S_2^3} &= -2(1 + x + z + xz) \\
+  S_2^4 &= \left[ 3, 6, 9, 12 \right] & \theta|_{S_2^4} &= 2(1 + y + z + yz) \\
+  S_2^5 &= \left[ 8, 9, 11, 12 \right] & \theta|_{S_2^5} &= 2(1 + x + y + xy) \\
+  S_2^6 &= \left[ 8, 11, 14, 16 \right] & \theta|_{S_2^6} &= 2z(1 + y) \\
+  S_2^7 &= \left[ 13, 14, 15, 16 \right] & \theta|_{S_2^7} &= 2x(1 + y) \\
+  S_2^8 &= \left[ 1, 2, 4, 5 \right] & \theta|_{S_2^8} &= -2x(1 + y) \\
+  S_2^9 &= \left[ 2, 3, 5, 6 \right] & \theta|_{S_2^9} &= -2(1 + x + y + xy) \\
+  S_3^1 &= \left[ 4, 5, 10, 11 \right] & u_{\beta}|_{S_3^1} &= 8x(z + 1) \\
+  S_3^2 &= \left[ 10, 11, 15, 16 \right] & u_{\beta}|_{S_3^2} &= 11.5xz \\
+  S_3^3 &= \left[ 5, 6, 11, 12 \right] & u_{\beta}|_{S_3^3} &= 4.5(1 + x + z + xz)
+\end{align*}
+
+\vspace{1mm}
+
+\begin{align*}
+  &f = 
+  \begin{cases} 
+      8x(yz + z + y + 1), & \Omega^1 \\
+      0, & \Omega^2 \\
+      3xz(y + 1), & \Omega^3
+  \end{cases}
+\end{align*}
+\vspace{1mm}
+
+\subsection{Тестирование на сетке с внутренним узлом}
+\subsubsection{Описание задачи}
+
+\vspace{5mm}
+\begin{figure}[H]
+\centering
+\resizebox{1\textwidth}{!}{%
+\begin{circuitikz}
+\tikzstyle{every node}=[font=\normalsize]
+\node at (7.5,8.5) [circ] {};
+\node at (10,9.75) [circ] {};
+\node at (11.25,8.5) [circ] {};
+\node at (13.75,9.75) [circ] {};
+\node at (17.5,8.5) [circ] {};
+\node at (20,9.75) [circ] {};
+\node at (7.5,11) [circ] {};
+\node at (11.25,11) [circ] {};
+\node at (17.5,11) [circ] {};
+\node at (20,12.25) [circ] {};
+\node at (10,12.25) [circ] {};
+\node at (7.5,16) [circ] {};
+\node at (11.25,16) [circ] {};
+\draw [ line width=1.5pt](7.5,16) to[short] (7.5,8.5);
+\draw [line width=1.5pt, short] (7.5,8.5) -- (17.5,8.5);
+\draw [line width=1.5pt, short] (17.5,11) -- (17.5,8.5);
+\draw [line width=1.5pt, short] (20,12.25) -- (20,9.75);
+\draw [line width=1.5pt, short] (11.25,11) -- (11.25,8.5);
+\draw [line width=1.5pt, short] (11.25,16) -- (11.25,11);
+\draw [line width=1.5pt, short] (7.5,16) -- (11.25,16);
+\draw [line width=1.5pt, dashed] (11.25,8.5) -- (13.75,9.75);
+\draw [line width=1.5pt, dashed] (10,9.75) -- (7.5,8.5);
+\draw [line width=1.5pt, dashed] (10,9.75) -- (20,9.75);
+\node at (13.75,17.25) [circ] {};
+\node at (10,17.25) [circ] {};
+\node at (13.75,12.25) [circ] {};
+\node at (11.25,13.5) [circ] {};
+\node at (7.5,13.5) [circ] {};
+\draw [line width=1.5pt, short] (7.5,16) -- (10,17.25);
+\draw [line width=1.5pt, short] (11.25,16) -- (13.75,17.25);
+\draw [line width=1.5pt, dashed] (13.75,12.25) -- (13.75,9.75);
+\draw [line width=1.5pt, dashed] (10,12.25) -- (13.75,12.25);
+\draw [line width=1.5pt, dashed] (10,12.25) -- (7.5,11);
+\draw [line width=1.5pt, dashed] (11.25,11) -- (13.75,12.25);
+\draw [line width=1.5pt, dashed] (13.75,12.25) -- (20,12.25);
+\draw [line width=1.5pt, dashed] (10,17.25) -- (10,9.75);
+\draw [line width=1.5pt, short] (7.5,13.5) -- (17.5,13.5);
+\draw [line width=1.5pt, short] (10,17.25) -- (13.75,17.25);
+\draw [line width=1.5pt, dashed] (7.5,13.5) -- (10,14.75);
+\draw [line width=1.5pt, dashed] (10,14.75) -- (13.75,14.75);
+\draw [line width=1.5pt, short] (7.5,11) -- (17.5,11);
+\draw [line width=1.5pt, short] (20,12.25) -- (17.5,11);
+\draw [line width=1.5pt, short] (17.5,8.5) -- (20,9.75);
+\draw [line width=1.5pt, short] (17.5,13.5) -- (20,14.75);
+\draw [line width=1.5pt, short] (20,14.75) -- (20,12.25);
+\draw [line width=1.5pt, short] (17.5,13.5) -- (17.5,11);
+\node at (13.75,14.75) [circ] {};
+\node at (17.5,13.5) [circ] {};
+\node at (20,14.75) [circ] {};
+\node at (10,14.75) [circ] {};
+\draw [line width=1.5pt, short] (13.75,17.25) -- (13.75,14.75);
+\draw [line width=1.5pt, short] (11.25,13.5) -- (13.75,14.75);
+\draw [line width=1.5pt, short] (13.75,14.75) -- (20,14.75);
+\draw [line width=1.5pt, dashed] (13.75,14.75) -- (13.75,12.25);
+\node at (19,11.75) [circ] {};
+\node at (9,11.75) [circ] {};
+\node at (9,9.25) [circ] {};
+\node at (19,9.25) [circ] {};
+\node at (9,14.25) [circ] {};
+\node at (12.75,14.25) [circ] {};
+\node at (19,14.25) [circ] {};
+\node at (9,16.75) [circ] {};
+\node at (12.75,16.75) [circ] {};
+\node at (12.75,9.25) [circ] {};
+\draw [line width=1.5pt, short] (12.75,16.75) -- (12.75,14.25);
+\draw [line width=1.5pt, short] (12.75,14.25) -- (19,14.25);
+\draw [line width=1.5pt, short] (19,14.25) -- (19,9.25);
+\draw [line width=1.5pt, short] (9,16.75) -- (12.75,16.75);
+\draw [line width=1.5pt, dashed] (9,16.75) -- (9,9.5);
+\draw [line width=1.5pt, dashed] (9,9.25) -- (19,9.25);
+\draw [line width=1.5pt, dashed] (12.75,14.25) -- (12.75,9.25);
+\draw [line width=1.5pt, dashed] (9,11.75) -- (19,11.75);
+\draw [line width=1.5pt, dashed] (9,14.25) -- (12.75,14.25);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,6) -- (5,6);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,6) -- (2.5,8.5);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,6) -- (4.5,7);
+\node [font=\normalsize] at (2.25,8.5) {z};
+\node [font=\normalsize] at (5,5.75) {x};
+\node [font=\normalsize] at (4.25,7.25) {y};
+\node [font=\normalsize] at (7.25,8.75) {\textbf{1}};
+\node [font=\normalsize] at (5,7) {};
+\node [font=\normalsize] at (11,8.75) {\textbf{2}};
+\node [font=\normalsize] at (17.25,8.75) {\textbf{3}};
+\node [font=\normalsize] at (8.75,9.5) {\textbf{4}};
+\node [font=\normalsize] at (12.5,9.5) {\textbf{5}};
+\node [font=\normalsize] at (18.75,9.5) {\textbf{6}};
+\node [font=\normalsize] at (9.75,10) {\textbf{7}};
+\node [font=\normalsize] at (13.5,10) {\textbf{8}};
+\node [font=\normalsize] at (19.75,10) {\textbf{9}};
+\node [font=\normalsize] at (7.25,11.25) {\textbf{10}};
+\node [font=\normalsize] at (11,11.25) {\textbf{11}};
+\node [font=\normalsize] at (17.25,11.25) {\textbf{12}};
+\node [font=\normalsize] at (8.75,12) {\textbf{13}};
+\node [font=\normalsize] at (12.5,12) {\textbf{14}};
+\node [font=\normalsize] at (18.75,12) {\textbf{15}};
+\node [font=\normalsize] at (9.75,12.5) {\textbf{16}};
+\node [font=\normalsize] at (13.5,12.5) {\textbf{17}};
+\node [font=\normalsize] at (19.75,12.5) {\textbf{18}};
+\node [font=\normalsize] at (7.25,13.75) {\textbf{19}};
+\node [font=\normalsize] at (11,13.75) {\textbf{20}};
+\node [font=\normalsize] at (17.25,13.75) {\textbf{21}};
+\node [font=\normalsize] at (8.75,14.5) {\textbf{22}};
+\node [font=\normalsize] at (12.5,14.5) {\textbf{23}};
+\node [font=\normalsize] at (18.75,14.5) {\textbf{24}};
+\node [font=\normalsize] at (9.75,15) {\textbf{25}};
+\node [font=\normalsize] at (13.5,15) {\textbf{26}};
+\node [font=\normalsize] at (19.75,15) {\textbf{27}};
+\node [font=\normalsize] at (7.25,16.25) {\textbf{28}};
+\node [font=\normalsize] at (11,16.25) {\textbf{29}};
+\node [font=\normalsize] at (8.75,17) {\textbf{30}};
+\node [font=\normalsize] at (12.5,17) {\textbf{31}};
+\node [font=\normalsize] at (9.75,17.5) {\textbf{32}};
+\node [font=\normalsize] at (13.5,17.5) {\textbf{33}};
+\draw [line width=1pt, dashed] (10,9.75) -- (12,9.75);
+\draw [line width=0.3pt, dashed] (7.5,16) -- (6.25,16);
+\draw [line width=0.3pt, dashed] (7.5,13.5) -- (6.25,13.5);
+\draw [line width=0.3pt, dashed] (7.5,11) -- (6.25,11);
+\draw [line width=0.3pt, dashed] (7.5,8.5) -- (6.5,8);
+\draw [line width=0.3pt, dashed] (17.5,8.5) -- (18.75,8.5);
+\draw [line width=0.3pt, dashed] (20,9.75) -- (21.25,9.75);
+\draw [line width=0.3pt, dashed] (19,9.25) -- (20.25,9.25);
+\draw [line width=0.3pt, dashed] (10,9.75) -- (5,7.25);
+\draw [line width=0.3pt, dashed] (11.25,8.5) -- (8.75,7.25);
+\draw [line width=0.3pt, dashed] (17.5,8.5) -- (15,7.25);
+\node [font=\normalsize] at (5.25,7.75) {0};
+\node [font=\normalsize] at (9,7.75) {3};
+\node [font=\normalsize] at (15.25,7.75) {8};
+\node [font=\normalsize] at (19,8) {0};
+\node [font=\normalsize] at (20.5,8.75) {1.5};
+\node [font=\normalsize] at (21.75,9.5) {2.5};
+\node [font=\normalsize] at (6.25,11.25) {2};
+\node [font=\normalsize] at (6.25,13.75) {4};
+\node [font=\normalsize] at (6.25,16.25) {6};
+\end{circuitikz}
+}%
+
+\label{fig:inner}
+\end{figure}
+
+\noindent где
+
+\begin{align*}
+  S_1^1 &= \left[ 1, 2, 28, 29 \right] \\
+  S_1^2 &= \left[ 2, 3, 20, 21 \right] \\
+  S_1^3 &= \left[ 7, 8, 32, 33 \right] \\
+  S_1^4 &= \left[ 1, 3, 7, 9 \right] \\
+  S_1^4 &= \left[ 8, 9, 26, 27 \right] \\
+  S_2^1 &= \left[ 1, 7, 28, 32 \right] \\
+  S_2^2 &= \left[ {3, 9, 21, 27} \right] \\
+  S_3^1 &= \left[ {28, 29, 32, 33} \right] \\
+  S_3^2 &= \left[ {20, 26, 29, 33} \right] \\
+  S_3^3 &= \left[ {20, 21, 26, 27} \right] \\
+\end{align*}
+
+\noindent Значения коэффициентов $\lambda$ и $\gamma$ выбраны в виде:
+
+\begin{align}
+  \lambda &= 5 & \gamma &= 0.4
+\end{align}
+
+\noindent Решение - полином вида
+
+\begin{align}
+  u = 5 + 0.2x + y + 30z + 0.5xy + xz + 10yz + xyz
+\end{align}
+
+\noindent Исходя из этого
+
+\begin{align}
+  &f = 0.4(5 + 0.2x + y + 30z + 0.5xy + xz + 10yz + xyz) \\[1ex]
+  &g = 2x + 0.04x^2 + 0.4xy + 12xz + 0.1x^2y + 0.2x^2z + 4xyz + 0.2x^2yz \\[1ex]
+  &u|_{S_1} = 0 \\[1ex]
+  &\theta|_{S_2^1} = -1 - 2.5y - 5z - 5yz \\[1ex]
+  &\theta|_{S_2^2} = 1 + 2.5y + 5z + 5yz
+\end{align}
+
+\noindent При условии, что $\beta = 10$:
+
+\begin{align}
+  &u_{\beta}|_{S_3^1} = 7xy + 6.7x + 66y + 200 \\[1ex]
+  &u_{\beta}|_{S_3^2} = 13.5yz + 2.75y + 33.5z + 5.7 \\[1ex]
+  &u_{\beta}|_{S_3^3} = 5xy + 4.7x + 46y + 140
+\end{align}
+
+
+\section{Проведенные исследования и выводы}
+\section{Тексты основных модулей программ}
+
+\end{document}
+

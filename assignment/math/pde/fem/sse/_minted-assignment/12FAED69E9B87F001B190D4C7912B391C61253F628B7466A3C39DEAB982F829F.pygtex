@@ -1,0 +1,83 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}ifndef FEM\PYGZus{}FCE\PYGZus{}H}
+\PYG{c+cp}{\PYGZsh{}define FEM\PYGZus{}FCE\PYGZus{}H}
+
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}fem/sse/vtx.h\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}vec/mtx.h\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}vec/mtx\PYGZus{}csj.h\PYGZgt{}}
+
+\PYG{c+c1}{// Тип краевых условий}
+\PYG{c+c1}{//  DIR \PYGZhy{} краевые условия первого типа (Дирихле)}
+\PYG{c+c1}{//  NEU \PYGZhy{} краевые условия второго типа (Неймана)}
+\PYG{c+c1}{//  ROB \PYGZhy{} краевые условия третьего типа (Робена)}
+\PYG{k}{enum}\PYG{+w}{ }\PYG{n}{type}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k+kt}{DIR}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{NEU}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ROB}\PYG{+w}{ }\PYG{p}{\PYGZcb{};}
+
+\PYG{c+c1}{// Краевые условия}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{cnd}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+c1}{// Тип}
+\PYG{+w}{  }\PYG{k}{enum}\PYG{+w}{ }\PYG{n}{type}\PYG{+w}{ }\PYG{n}{type}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{c+c1}{// Параментры}
+\PYG{+w}{  }\PYG{k}{union}\PYG{+w}{ }\PYG{n+nc}{pps}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Параметры для условий первого рода}
+\PYG{+w}{    }\PYG{k}{struct}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{*}\PYG{n}{tmp}\PYG{p}{)(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{);}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{n}{dir}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Параметры для условий второго рода}
+\PYG{+w}{    }\PYG{k}{struct}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{*}\PYG{n}{tta}\PYG{p}{)(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{);}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{n}{neu}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Параметры для условий третьего рода}
+\PYG{+w}{    }\PYG{k}{struct}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{*}\PYG{n}{tmp}\PYG{p}{)(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{);}
+\PYG{+w}{      }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{n}{bet}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{n}{rob}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{n}{pps}\PYG{p}{;}
+\PYG{p}{\PYGZcb{};}
+
+\PYG{c+c1}{// Грань}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fce}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{c+c1}{// Список из глобальных номеров узлов, составляющих данную грань}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{vtx}\PYG{p}{[}\PYG{l+m+mi}{4}\PYG{p}{];}
+
+\PYG{+w}{  }\PYG{c+c1}{// Краевые условия}
+\PYG{+w}{  }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{cnd}\PYG{+w}{ }\PYG{n}{cnd}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{c+c1}{// Локальные матрица и / или вектор правой части}
+\PYG{+w}{  }\PYG{k}{union}\PYG{+w}{ }\PYG{n+nc}{loc}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Локальный вектор правой части для условий второго рода}
+\PYG{+w}{    }\PYG{k}{struct}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vec}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{n}{neu}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Локальные матрица и вектор правой части для условий третьего рода}
+\PYG{+w}{    }\PYG{k}{struct}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{      }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vec}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{+w}{      }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{mtx}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{n}{rob}\PYG{p}{;}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{n}{loc}\PYG{p}{;}
+\PYG{p}{\PYGZcb{};}
+
+\PYG{c+c1}{// Подпрограмма выделения памяти под грань}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fce}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fce\PYGZus{}new}\PYG{p}{(}\PYG{k}{enum}\PYG{+w}{ }\PYG{n}{type}\PYG{+w}{ }\PYG{n}{type}\PYG{p}{);}
+
+\PYG{c+c1}{// Подпрограмма чтения грани из строки}
+\PYG{c+c1}{//  fun \PYGZhy{} список глобальных функций}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fce}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fce\PYGZus{}get}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{buf}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{**}\PYG{n}{fun}\PYG{p}{)(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{*}\PYG{p}{));}
+
+\PYG{c+c1}{// Подпрограмма вычисления локальной матрицы и вектора правой части}
+\PYG{c+c1}{//  v \PYGZhy{} глобальный список узлов}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{fce\PYGZus{}evo}\PYG{p}{(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fce}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{**}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{);}
+
+\PYG{c+c1}{// Подпрограмма занесения локальной матрицы }
+\PYG{c+c1}{// и вектора правой части в глобальную СЛАУ}
+\PYG{c+c1}{//  a \PYGZhy{} матрица глобальной СЛАУ в строчно\PYGZhy{}столбцовом формате}
+\PYG{c+c1}{//  b \PYGZhy{} вектор правой части глобальной СЛАУ}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{fce\PYGZus{}mov}\PYG{p}{(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fce}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{mtx\PYGZus{}csj}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vec}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{);}
+
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{fce\PYGZus{}cls}\PYG{p}{(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fce}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{);}
+
+\PYG{c+cp}{\PYGZsh{}endif  }\PYG{c+c1}{// FEM\PYGZus{}FCE\PYGZus{}H}
+\end{Verbatim}

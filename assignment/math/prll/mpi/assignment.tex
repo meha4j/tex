@@ -1,0 +1,536 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[
+  margin=1in
+]{geometry}
+
+\usepackage[T1, T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{minted}
+\usepackage{tabularray}
+\usepackage{siunitx}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \textsc{Новосибирский государственный технический университет}\par
+  \vspace{1mm}
+  Кафедра прикладной математики\par
+  \vspace{4cm}
+  \textsc{Практическая работа \textnumero 3}\par
+  {\huge\bfseries Основы работы в MPI\par}
+  \vspace{1cm}
+  {\scriptsize ФПМИ, ПМ-24\par}
+  \vspace{1mm}
+  {\itshape\large Параскун И., Шакиров П., Герасименко В.\par}
+  \vfill
+  {\small преподаватель\par}
+  \vspace{1mm}
+  \textsc{Домников Петр Александрович}
+  \vfill
+  \large{Новосибирск, 2024}
+\end{titlepage}
+
+\newpage
+\setcounter{page}{2}
+
+\section{Простейшее MPI приложение}
+\subsection{Постановка задачи}
+\begin{itemize}
+  \item Написать программу с использованием MPI, в которой каждый выводит свой номер и их общее число.
+  \item Создать командный файл, который запускает на выполнение написанную MPI программу в количестве 10 экземпляров.
+\end{itemize}
+
+\subsection{Текст программы}
+
+\begin{minted}{c}
+#define COM MPI_COMM_WORLD
+
+int main(int argc, char* argv[argc]) {
+  if ((errno = MPI_Init(&argc, &argv)))
+    goto err;
+
+  int pc;
+  int id;
+
+  if ((errno = MPI_Comm_size(COM, &pc)))
+    goto err;
+
+  if ((errno = MPI_Comm_rank(COM, &id)))
+    goto err;
+
+  printf("Hello, I'm %d and there are %d of us!\n", id, pc);
+
+  if ((errno = MPI_Finalize()))
+    goto err;
+
+  return 0;
+
+err:
+  MPI_Abort(COM, errno);
+  return -1;
+}
+\end{minted}
+
+\subsection{Текст командного файла}
+
+\begin{minted}{bash}
+#!/bin/bash
+
+mpirun -n 10 --oversubscribe ./app/prll/mpi/hw
+\end{minted}
+
+\subsection{Результат выполнения}
+
+\begin{minted}{console}
+[...]$ ./run
+Hello, I'm 4 and there are 10 of us!
+Hello, I'm 7 and there are 10 of us!
+Hello, I'm 2 and there are 10 of us!
+Hello, I'm 5 and there are 10 of us!
+Hello, I'm 1 and there are 10 of us!
+Hello, I'm 0 and there are 10 of us!
+Hello, I'm 6 and there are 10 of us!
+Hello, I'm 8 and there are 10 of us!
+Hello, I'm 3 and there are 10 of us!
+Hello, I'm 9 and there are 10 of us!
+\end{minted}
+
+\newpage
+
+\section{Обмен сообщениями в MPI}
+\subsection{Постановка задачи}
+
+\begin{itemize}
+  \item Процессы с номером отличным от 0 генерируют вектор размера 100000 (у каждого процесса свой вектор), вычисляют его норму и посылают результат процессу с номером 0.
+  \item Процесс с номером 0 распечатывает полученные значения с указанием номера процесса, приславшего сообщение.
+\end{itemize}
+
+\subsection{Текст программы}
+
+\begin{minted}{c}
+void vec_nrm(struct vec* vp, double* rp) {
+  int n = vp->n;
+
+  real* vvp = vp->v;
+  preal s = 0;
+
+#ifdef OMP_THREADS_NUM
+#pragma omp parallel for reduction(+ : s) num_threads(OMP_THREADS_NUM)
+#endif  // OMP
+  for (int i = 0; i < n; ++i)
+    s += vvp[i] * vvp[i];
+
+  *rp = sqrt(s);
+}
+\end{minted}
+
+\subsubsection{Блокирующая версия}
+
+\begin{minted}{c}
+#define N 100000
+
+#define TAG 0
+#define DBL MPI_DOUBLE
+#define COM MPI_COMM_WORLD
+#define ANY MPI_ANY_SOURCE
+#define ROOT 0
+
+int main(int argc, char* argv[argc]) {
+  if ((errno = MPI_Init(&argc, &argv)))
+    goto err;
+
+  int pc;
+  int id;
+
+  if ((errno = MPI_Comm_size(COM, &pc)))
+    goto err;
+
+  if ((errno = MPI_Comm_rank(COM, &id)))
+    goto err;
+
+  double nrm;
+
+  if (id == ROOT)
+    for (int i = 0; i < pc - 1; ++i) {
+      MPI_Status stat;
+
+      if ((errno = MPI_Recv(&nrm, 1, DBL, ANY, TAG, COM, &stat)))
+        goto err;
+
+      trace("%d -> %lf", stat.MPI_SOURCE, nrm);
+    }
+  else {
+    struct vec* v = vec_new(N);
+
+    if (!v)
+      goto err;
+
+    vec_seq(v, id);
+    vec_nrm(v, &nrm);
+
+    if ((errno = MPI_Send(&nrm, 1, DBL, ROOT, TAG, COM))) {
+      vec_free(v);
+      goto err;
+    }
+
+    vec_free(v);
+  }
+
+  if ((errno = MPI_Finalize()))
+    goto err;
+
+  return 0;
+
+err:
+  MPI_Abort(COM, errno);
+  return -1;
+}
+\end{minted}
+
+\subsubsection{Неблокирующая версия}
+
+\begin{minted}{c}
+#define N 100000
+
+#define TAG 0
+#define DBL MPI_DOUBLE
+#define COM MPI_COMM_WORLD
+#define ROOT 0
+
+int main(int argc, char* argv[argc]) {
+  if ((errno = MPI_Init(&argc, &argv)))
+    goto err;
+
+  int pc;
+  int id;
+
+  if ((errno = MPI_Comm_size(COM, &pc)))
+    goto err;
+
+  if ((errno = MPI_Comm_rank(COM, &id)))
+    goto err;
+
+  if (id == ROOT) {
+    MPI_Request* req = malloc(sizeof(MPI_Request) * (pc - 1));
+
+    if (!req)
+      goto err;
+
+    double* nrm = malloc(sizeof(double) * (pc - 1));
+
+    if (!nrm) {
+      free(req);
+      goto err;
+    }
+
+    int* f = malloc(sizeof(int) * (pc - 1));
+
+    if (!f) {
+      free(req);
+      free(nrm);
+      goto err;
+    }
+
+    for (int i = 0; i < pc - 1; ++i) {
+      f[i] = 0;
+
+      if ((errno = MPI_Irecv(&nrm[i], 1, DBL, i + 1, TAG, COM, &req[i]))) {
+        free(req);
+        free(nrm);
+        free(f);
+
+        goto err;
+      }
+    }
+
+    int s = 0;
+
+    while (s != pc - 1)
+      for (int i = 0; i < pc - 1; ++i)
+        if (!f[i]) {
+          if ((errno = MPI_Test(&req[i], &f[i], NULL))) {
+            free(req);
+            free(nrm);
+            free(f);
+
+            goto err;
+          }
+
+          if (f[i]) {
+            s += 1;
+            trace("%d -> %lf", i + 1, nrm[i]);
+          }
+        }
+
+    free(req);
+    free(nrm);
+    free(f);
+  } else {
+    srand(time(NULL) + id);
+
+    struct vec* v = vec_new(N);
+
+    if (!v)
+      goto err;
+
+    double nrm;
+
+    vec_seq(v, id);
+    vec_nrm(v, &nrm);
+
+    if (id == 1)
+      sleep(10);
+
+    if ((errno = MPI_Send(&nrm, 1, DBL, ROOT, TAG, COM))) {
+      vec_free(v);
+      goto err;
+    }
+
+    vec_free(v);
+  }
+
+  if ((errno = MPI_Finalize()))
+    goto err;
+
+  return 0;
+
+err:
+  MPI_Abort(COM, errno);
+  return -1;
+}
+\end{minted}
+
+\subsection{Результат выполнения}
+\subsubsection{Блокирующая версия}
+
+\begin{minted}{console}
+[...]$ mpirun -n 10 --oversubscribe ./app/prll/mpi/nrm
+[2024-10-19 11:47:27]: 8 -> 18259472.581375
+[2024-10-19 11:47:27]: 4 -> 18258377.106140
+[2024-10-19 11:47:27]: 2 -> 18257829.376736
+[2024-10-19 11:47:27]: 3 -> 18258103.240753
+[2024-10-19 11:47:27]: 5 -> 18258650.972895
+[2024-10-19 11:47:27]: 7 -> 18259198.710513
+[2024-10-19 11:47:27]: 9 -> 18259746.453607
+[2024-10-19 11:47:27]: 6 -> 18258924.841020
+[2024-10-19 11:47:27]: 1 -> 18257555.514088
+\end{minted}
+
+\subsubsection{Неблокирующая версия}
+
+\begin{minted}{console}
+[...]$ mpirun -n 10 --oversubscribe ./app/prll/mpi/nrm-nb
+[2024-10-19 11:47:55]: 6 -> 18258924.841020
+[2024-10-19 11:47:55]: 3 -> 18258103.240753
+[2024-10-19 11:47:55]: 5 -> 18258650.972895
+[2024-10-19 11:47:55]: 8 -> 18259472.581375
+[2024-10-19 11:47:55]: 4 -> 18258377.106140
+[2024-10-19 11:47:55]: 2 -> 18257829.376736
+[2024-10-19 11:47:55]: 7 -> 18259198.710513
+[2024-10-19 11:47:55]: 9 -> 18259746.453607
+[2024-10-19 11:48:05]: 1 -> 18257555.514088
+\end{minted}
+
+\newpage
+
+\section{Коллективные операции в MPI}
+\subsection{Постановка задачи}
+
+Написать программу параллельного умножения матрицы на вектор с разрезанием матрицы на горизонтальные полосы неравной длины.
+
+\subsection{Текст программы}
+
+\begin{minted}{c}
+#define TAG 0
+#define ROOT 0
+#define COM MPI_COMM_WORLD
+#define DBL MPI_DOUBLE
+#define INT MPI_INT
+
+#define N 10
+
+int main(int argc, char* argv[argc]) {
+
+  if ((errno = MPI_Init(&argc, &argv))) {
+    MPI_Abort(COM, errno);
+    return -1;
+  }
+
+  int pc;
+  int id;
+
+  if ((errno = MPI_Comm_size(COM, &pc))) {
+    MPI_Abort(COM, errno);
+    return -1;
+  }
+
+  if ((errno = MPI_Comm_rank(COM, &id))) {
+    MPI_Abort(COM, errno);
+    return -1;
+  }
+
+  struct vec* xp = 0;
+  struct vec* fp = 0;
+  struct pmtx* mp = 0;
+
+  int* t = 0;
+  int* td = 0;
+  int* tc = 0;
+
+  int* vd = 0;
+  int* vc = 0;
+
+  int* fd = 0;
+
+  if (id == ROOT) {
+    t = malloc(sizeof(int) * pc);
+
+    if (!t)
+      goto end;
+
+    td = malloc(sizeof(int) * pc);
+
+    if (!td)
+      goto end;
+
+    tc = malloc(sizeof(int) * pc);
+
+    if (!tc)
+      goto end;
+
+    vd = malloc(sizeof(int) * pc);
+
+    if (!vd)
+      goto end;
+
+    vc = malloc(sizeof(int) * pc);
+
+    if (!vc)
+      goto end;
+
+    fd = malloc(sizeof(int) * pc);
+
+    if (!fd)
+      goto end;
+
+    for (int i = 0; i < pc; ++i) {
+      t[i] = 0;
+      td[i] = i;
+      tc[i] = 1;
+      vc[i] = 0;
+      fd[i] = 0;
+    }
+  } else {
+    t = malloc(sizeof(int));
+
+    if (!t)
+      goto end;
+  }
+
+  int p = N < pc ? N : pc;
+
+  if (id == ROOT)
+    for (int i = p - 1, s = N; i >= 0; --i) {
+      t[td[i]] = s / (i + 1);
+      s = s - t[td[i]];
+
+      vc[i] = t[td[i]] * N;
+      vd[i] = s * N;
+
+      fd[i] = s;
+    }
+
+  errno = MPI_Scatterv(t, tc, td, INT, t, 1, INT, ROOT, COM);
+
+  if (errno)
+    goto end;
+
+  mp = pmtx_new(N, 0, id == ROOT ? N : *t);
+
+  if (!mp)
+    goto end;
+
+  if (id == ROOT)
+    pmtx_seq(mp, 1);
+
+  errno = MPI_Scatterv(mp->v, vc, vd, DBL, mp->v, *t * N, DBL, ROOT, COM);
+
+  if (errno)
+    goto end;
+
+  if (id == ROOT) {
+    mp->c = *t;
+  }
+
+  xp = vec_new(N);
+
+  if (!xp)
+    goto end;
+
+  if (id == ROOT)
+    vec_seq(xp, 1);
+
+  errno = MPI_Bcast(xp->v, N, DBL, ROOT, COM);
+
+  if (errno)
+    goto end;
+
+  fp = vec_new(N);
+
+  if (!fp)
+    goto end;
+
+  if (mtx_vmlt(mp, xp, fp))
+    goto end;
+
+  errno = MPI_Gatherv(fp->v, *t, DBL, fp->v, t, fd, DBL, ROOT, COM);
+
+  if (errno)
+    goto end;
+
+  if (id == ROOT) {
+    vec_fput(stdout, fp);
+    putchar('\n');
+  }
+end:
+  ...
+
+  if (errno) {
+    MPI_Abort(COM, errno);
+    printf("fatal: %s.\n", strerror(errno));
+    return -1;
+  }
+
+  if ((errno = MPI_Finalize())) {
+    printf("fatal: %s.\n", strerror(errno));
+    MPI_Abort(COM, errno);
+    return -1;
+  }
+
+  return 0;
+}
+\end{minted}
+
+\subsection{Результат выполнения}
+
+\begin{minted}{console}
+[...]$ mpirun -n 1 --oversubscribe ./app/prll/mpi/mlt
+5.500e+01 1.300e+02 2.050e+02 2.800e+02 3.550e+02
+
+[...]$ mpirun -n 8 --oversubscribe ./app/prll/mpi/mlt
+5.500e+01 1.300e+02 2.050e+02 2.800e+02 3.550e+02
+
+[...]$ mpirun -n 1 --oversubscribe ./app/prll/mpi/mlt
+3.850e+02 9.350e+02 1.485e+03 2.035e+03 2.585e+03 \
+3.135e+03 3.685e+03 4.235e+03 4.785e+03 5.335e+03
+
+[...]$ mpirun -n 8 --oversubscribe ./app/prll/mpi/mlt
+3.850e+02 9.350e+02 1.485e+03 2.035e+03 2.585e+03 \
+3.135e+03 3.685e+03 4.235e+03 4.785e+03 5.335e+03
+\end{minted}
+
+\end{document}
+

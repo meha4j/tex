@@ -1,0 +1,404 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[
+  margin=1in
+]{geometry}
+
+\usepackage[T1, T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{textcomp}
+\usepackage{minted}
+\usepackage{hyperref}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \textsc{Новосибирский государственный технический университет}\par
+  \vspace{1mm}
+  Кафедра прикладной математики\par
+  \vspace{4cm}
+  \textsc{Практическая работа \textnumero 3}\par
+  {\huge\bfseries Асимметричные криптографические алгоритмы\par}
+  \vspace{1cm}
+  {\scriptsize ФПМИ, ПМ-24\par}
+  \vspace{1mm}
+  {\itshape\large Параскун И., Шакиров П., Герасименко В.\par}
+  \vfill
+  {\small преподаватель\par}
+  \vspace{1mm}
+  \textsc{Ступаков Илья Михайлович}
+  \vfill
+  \large{Новосибирск, 2024}
+\end{titlepage}
+
+\newpage
+
+\section{Цель}
+Знакомство с асимметричными криптографическими алгоритмами.
+
+\section{Протокол обмена ключами Диффи-Хеллмана}
+
+\textit{* математическая часть протокола}
+\begin{minted}{go}
+type BigInt struct {
+	*big.Int
+}
+
+type Group struct {
+	G BigInt `json:"g"`
+	P BigInt `json:"p"`
+}
+
+type PublicKey struct {
+	A BigInt
+}
+
+type PrivateKey struct {
+	a BigInt
+
+	*PublicKey
+}
+
+type SessionKey struct {
+	s BigInt
+}
+
+func GenerateKey(group *Group) (*PrivateKey, error) {
+	r := big.NewInt(3)
+	a, err := rand.Int(rand.Reader, r.Sub(group.P.Int, r))
+
+	if err != nil {
+		return nil, err
+	}
+
+	a.Add(a, r.SetInt64(2))
+
+	pub := &PublicKey{
+		BigInt{r.Exp(group.G.Int, a, group.P.Int)},
+	}
+
+	return &PrivateKey{BigInt{a}, pub}, nil
+}
+
+func NewPublicKey(a BigInt) *PublicKey {
+	return &PublicKey{a}
+}
+
+func (key *PublicKey) String() string {
+	return key.A.String()
+}
+
+func (key *PrivateKey) Public() *PublicKey {
+	return key.PublicKey
+}
+
+func (loc *PrivateKey) NewSessionKey(group *Group, rem *PublicKey) *SessionKey {
+	key := big.NewInt(0).Exp(rem.A.Int, loc.a.Int, group.P.Int)
+
+	return &SessionKey{
+		BigInt{key},
+	}
+}
+
+func (key *SessionKey) String() string {
+	return key.s.String()
+}
+\end{minted}
+
+\noindent\textit{* прикладная часть протокола}
+\begin{minted}{go}
+type Client struct {
+	BaseUrl string
+	http    *http.Client
+}
+
+func NewClient(url string, cfg *tls.Config) *Client {
+	return &Client{
+		url,
+		&http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: cfg,
+			},
+		},
+	}
+}
+
+func (cli *Client) GetGroup() (*Group, error) {
+	url := cli.BaseUrl + "/group"
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := cli.http.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		reas, err := io.ReadAll(resp.Body)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, fmt.Errorf(string(reas))
+	}
+
+	group := NewGroup()
+	err = json.NewDecoder(resp.Body).Decode(group)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return group, nil
+}
+
+func (cli *Client) Exchange(key *PublicKey) (*PublicKey, error) {
+	body, err := key.A.MarshalJSON()
+
+	if err != nil {
+		return nil, err
+	}
+
+	url := cli.BaseUrl + "/hello"
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := cli.http.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		reas, err := io.ReadAll(resp.Body)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, fmt.Errorf(string(reas))
+	}
+
+	raw, _ := io.ReadAll(resp.Body)
+	big, _ := big.NewInt(0).SetString(string(raw), 16)
+
+	return &PublicKey{BigInt{big}}, nil
+}
+\end{minted}
+
+\begin{minted}{console}
+[...]$ crypto dhx -h
+Basic Diffie-Hellman key exchange.
+
+Usage:
+  crypto dhx [url] [flags]
+
+Flags:
+      --cacert string   CA certificate to verify peer against.
+      --cert string     Client certificate filename.
+  -h, --help            help for dhx
+      --key string      Private key filename.
+  -o, --out string      Session key filename, default: stdout.
+
+[...]$ crypto dhx \
+  > --cacert .certs/cryptolab-ca.crt.der \
+  > --cert .certs/client.crt.pem \
+  > --key .certs/client.pkcs8.pem \
+  > https://istupakov.ddns.net:4006/api/dh
+
+4641d36eefed3ad7c9032c1c12ee24f625b48e9adb226c2d757ab97090d42
+9e2e45e6bfc11b180150cdb4b6b9e1a534039938e1484359af1f50f2af450
+c9a464219c025b79858ff6580a89197a14a854033c1dc77834c1fe0534e0b
+97e9eca827fafdbd82f76bd0b75c19472eb4c354efdf7d0e7ca1e6ef9be29
+b0b3af6bfc0a9da2b8d4bbd1532ea6c7b21ea5e16f19134c780f582615f0c
+03a6ad8c394d5710d14b46eacb386f6e40bfb7cdc4185a42871fa3e402e8f
+84d953c074a5654cf19cf2abf028ce80b1c5bff5cd052cb8140d21745d491
+44aa3a32830b44d22ac2c055e4426de087ca60d7d9337ce16e689b9eeef19
+353e4da55490f56cd946f96
+\end{minted}
+
+\section{Цифровая подпись}
+
+\begin{minted}{go}
+type Doc struct {
+	Digest    string `json:"message"`
+	Signature []byte `json:"signature"`
+}
+
+func NewDoc(src io.Reader) (*Doc, error) {
+	b, err := io.ReadAll(src)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &Doc{string(b), nil}, nil
+}
+
+func (doc *Doc) Sign(key *rsa.PrivateKey) error {
+	hash := sha256.Sum256([]byte(doc.Digest))
+	sign, err := rsa.SignPKCS1v15(nil, key, crypto.SHA256, hash[:])
+
+	if err != nil {
+		return err
+	}
+
+	doc.Signature = sign
+	return nil
+}
+
+const (
+	DigestUrl = "http://loripsum.net/api/1/plaintext"
+)
+
+type Client struct {
+	Url  string
+	http *http.Client
+}
+
+func NewClient(url string, cfg *tls.Config) *Client {
+	return &Client{
+		url,
+		&http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: cfg,
+			},
+		},
+	}
+}
+
+func (cli *Client) GetDigest(doc *Doc) error {
+	url := DigestUrl
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := cli.http.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	digest, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf(string(digest))
+	}
+
+	doc.Digest = string(digest)
+
+	return nil
+}
+
+func (cli *Client) SendDoc(doc *Doc) error {
+	body, err := json.MarshalIndent(doc, "", "  ")
+
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Request:\n%s\n", string(body))
+
+	req, err := http.NewRequest(http.MethodPost, cli.Url, bytes.NewReader(body))
+
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := cli.http.Do(req)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 201 {
+		res, err := io.ReadAll(resp.Body)
+
+		if err != nil {
+			return err
+		}
+
+		return fmt.Errorf(string(res))
+	}
+
+	return nil
+}
+\end{minted}
+
+\begin{minted}{console}
+[...]$ crypto rsx -h
+Sign message using PKCS #1 v1.5 with SHA-256.
+
+Usage:
+  crypto rsx [url] [flags]
+
+Flags:
+      --cacert string   CA certificate to verify peer against.
+      --cert string     Client certificate filename.
+  -h, --help            help for rsx
+      --key string      Private key filename.
+
+[...]$ crypto rsx \
+  > --cacert .certs/cryptolab-ca.crt.der \
+  > --cert .certs/client.crt.pem \
+  > --key .certs/client.pkcs8.pem \
+  > https://istupakov.ddns.net:4006/api/chat/signed-message
+
+2024/10/26 17:02:43 Request:
+{
+  "message": "Lorem ipsum dolor sit amet, consectetur 
+    adipiscing elit. An vero, inquit, quisquam potest 
+    probare, quod perceptfum, quod. Miserum hominem! 
+    Si dolor summum malum est, dici aliter non potest
+    . Certe nihil nisi quod possit ipsum propter se i
+    ure laudari. Cur ipse Pythagoras et Aegyptum lust
+    ravit et Persarum magos adiit? Duo Reges: constru
+    ctio interrete. Sic vester sapiens magno aliquo e
+    molumento commotus cicuta, si opus erit, dimicabi
+    t. Quasi ego id curem, quid ille aiat aut neget. 
+    Sit hoc ultimum bonorum, quod nunc a me defenditu
+    r; Neminem videbis ita laudatum, ut artifex calli
+    dus comparandarum voluptatum diceretur. Alterum s
+    ignificari idem, ut si diceretur, officia media o
+    mnia aut pleraque servantem vivere. Ut in geometr
+    ia, prima si dederis, danda sunt omnia. \n\n",
+
+  "signature": "EgrjdR1TXDhv0mfJ6x12mDseZkSDNsiR8PpGK
+    1K308MSnV5udvsZaMno6Rn4Hpzkqip0ZjdQJYDzCL78jjSspc
+    yptEAcgZ3qe8ia41PBZfg/K/zJX3kkGParBbWAtRW2Fgi3/To
+    kO+/DBwTyT9UFuatc+RDCQSWo3lQkrAWrEXEOXlzfazrWLHmc
+    mtVK3aVV/OCcoo6acEYa5HpYA1iK8Ncj9K1/pY+Oph6/TZpqk
+    9nduaj2HQ2XFnWqTOKv0E1pDaxNp7igCXZVxJAdkKJDzWd+N6
+    a3SlzL2zSgzo8FiI2hKbQH+MsWEpItgzy3uEW6MURqP0IpfpU
+    Y3lKLgnNmUg=="
+}
+\end{minted}
+
+\end{document}
+

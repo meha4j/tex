@@ -1,0 +1,350 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[
+  margin=1in
+]{geometry}
+
+\usepackage{graphicx}
+
+\usepackage[T1, T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{textcomp}
+\usepackage{minted}
+
+\graphicspath{ {./img/} }
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \textsc{Новосибирский государственный технический университет}\par
+  \vspace{1mm}
+  Кафедра прикладной математики\par
+  \vspace{4cm}
+  \textsc{Практическая работа \textnumero 1}\par
+  {\huge\bfseries Криптографические сертификаты\par}
+  \vspace{1cm}
+  {\scriptsize ФПМИ, ПМ-24\par}
+  \vspace{1mm}
+  {\itshape\large Параскун И., Шакиров П., Герасименко В.\par}
+  \vfill
+  {\small преподаватель\par}
+  \vspace{1mm}
+  \textsc{Ступаков Илья Михайлович}
+  \vfill
+  \large{Новосибирск, 2024}
+\end{titlepage}
+
+\newpage
+
+\section{Цель}
+Научиться работе с криптографическими сертификатами и изучить использование OpenSSL для их создания.
+
+\section{Работа с OpenSSL}
+\subsection{Создать корневой сертификат}
+
+\begin{minted}{text}
+[ req ]
+distinguished_name  = distinguished_name
+x509_extensions     = extensions
+prompt              = no
+
+[ distinguished_name ]
+C                   = RU
+L                   = Novosibirsk
+O                   = Novosibirsk State Technical University
+CN                  = NTS Root CA
+
+[ extensions ]
+basicConstraints    = critical, CA:TRUE, pathlen:1
+keyUsage            = critical, keyCertSign
+\end{minted}
+\textit{* конфигурационный файл - ca.conf}
+
+\begin{minted}{console}
+openssl req -new -x509 -config ca.conf -out ca.crt -keyout=ca.key
+\end{minted}
+\textit{* команда формиварония корневого сертификата}
+
+\begin{minted}{console}
+openssl x509 -in ca.crt -text 
+\end{minted}
+\textit{* команда расшифровки сертификата}
+
+\begin{minted}{text}
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            13:cc:f5:55:6f:de:12:5e:90:b1:3c:e4:f5:4f:00:5c:15:f2:92:a7
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=RU, L=Novosibirsk, O=Novosibirsk State Technical University,\
+          CN=NTS Root CA
+        Validity
+            Not Before: Sep  4 06:14:28 2024 GMT
+            Not After : Oct  4 06:14:28 2024 GMT
+        Subject: C=RU, L=Novosibirsk, O=Novosibirsk State Technical University,\
+        CN=NTS Root CA
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    ...
+                Exponent: ...
+        X509v3 extensions:
+            X509v3 Basic Constraints: critical
+                CA:TRUE, pathlen:1
+            X509v3 Key Usage: critical
+                Certificate Sign
+            X509v3 Subject Key Identifier:
+                60:5E:EB:E0:8C:51:73:F2:35:1A:89:87:E5:3D:C7:B1:90:7E:E0:3F
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        ...
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+\end{minted}
+\textit{* расшифровка сертификата}
+
+\subsection{Создать запрос клиентского сертификата}
+
+\begin{minted}{text}
+[ req ]
+distinguished_name  = distinguished_name
+req_extensions      = extensions
+prompt              = no
+
+[ distinguished_name ]
+C                   = RU
+L                   = Novosibirsk
+O                   = Novosibirsk State Technical University
+CN                  = Paraskun, Gerasimenko, Shakirov
+
+[ extensions ]
+basicConstraints    = CA:FALSE
+keyUsage            = digitalSignature
+extendedKeyUsage    = clientAuth
+\end{minted}
+\textit{* конфигурационный файл - client.conf}
+
+\begin{minted}{console}
+openssl req -new -config client.conf -out client.csr -keyout=client.key
+\end{minted}
+\textit{* команда формиварония запроса клиентского сертификата}
+
+\begin{minted}{console}
+openssl req -in client.csr -text 
+\end{minted}
+\textit{* команда расшифровки запроса}
+
+\begin{minted}{text}
+Certificate Request:
+    Data:
+        Version: 1 (0x0)
+        Subject: C=RU, L=Novosibirsk, O=Novosibirsk State Technical University,\
+          CN=Paraskun, Gerasimenko, Shakirov
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    ...
+                Exponent: ...
+        Attributes:
+            Requested Extensions:
+                X509v3 Basic Constraints:
+                    CA:FALSE
+                X509v3 Key Usage:
+                    Digital Signature
+                X509v3 Extended Key Usage:
+                    TLS Web Client Authentication
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        ...
+-----BEGIN CERTIFICATE REQUEST-----
+...
+-----END CERTIFICATE REQUEST-----
+\end{minted}
+\textit{* расшифровка запроса}
+
+\subsection{Подписать сертификат}
+
+\begin{minted}{console}
+openssl x509 -req -extfile client.conf -extensions extensions -in client.csr \
+  -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt
+\end{minted}
+\textit{* команда подписи сертификата}
+
+\begin{minted}{console}
+openssl x509 -in client.crt -text 
+\end{minted}
+\textit{* команда расшифровки сертификата}
+
+\begin{minted}{text}
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            ...
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=RU, L=Novosibirsk, O=Novosibirsk State Technical University,\
+          CN=NTS Root CA
+        Validity
+            Not Before: Sep  4 06:30:58 2024 GMT
+            Not After : Oct  4 06:30:58 2024 GMT
+        Subject: C=RU, L=Novosibirsk, O=Novosibirsk State Technical University,\
+          CN=Paraskun, Gerasimenko, Shakirov
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    ...
+                Exponent: ...
+        X509v3 extensions:
+            X509v3 Basic Constraints:
+                CA:FALSE
+            X509v3 Key Usage:
+                Digital Signature
+            X509v3 Extended Key Usage:
+                TLS Web Client Authentication
+            X509v3 Subject Key Identifier:
+                08:14:3D:2A:FA:5A:0A:8B:EA:B0:8D:0F:9D:BB:86:3D:2D:07:03:EC
+            X509v3 Authority Key Identifier:
+                60:5E:EB:E0:8C:51:73:F2:35:1A:89:87:E5:3D:C7:B1:90:7E:E0:3F
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        ...
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+\end{minted}
+\textit{* расшифровка сертификата}
+
+\section{Подписать сертификат у преподавателя}
+\subsection{Подписать сертификат}
+
+\begin{minted}{console}
+curl https://istupakov.ddns.net:4006/api/csr -F file=@client.csr \
+  --cacert cryptolab-ca.crt -v 
+\end{minted}
+\textit{* команда запроса}
+
+\begin{minted}{console}
+https://istupakov.ddns.net:4006/api/csr/c478eab0-689f-48bf-927d-62288c5553af
+\end{minted}
+\textit{* адрес сертификата}
+
+\begin{minted}{console}
+openssl x509 -in client-rem.crt -text 
+\end{minted}
+\textit{* команда расшифровки сертификата}
+
+\begin{minted}{text}
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            0d:49:d9:ef:64:10:5d:68:08:3b:39:62:4b:3f:62:d1:41:96:0e:51
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=RU, L=Novosibirsk, O=Novosibirsk State Technical University, \
+          OU=Faculty of Applied Mathematics and Computer Science, \
+            CN=CryptoLab Root CA
+        Validity
+            Not Before: Sep  4 09:44:06 2024 GMT
+            Not After : Jan  2 09:44:06 2025 GMT
+        Subject: C=RU, O=Novosibirsk State Technical University, \
+          CN=Paraskun, Gerasimenko, Shakirov
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    ...
+                Exponent: ...
+        X509v3 extensions:
+            X509v3 Basic Constraints:
+                CA:FALSE
+            X509v3 Key Usage: critical
+                Digital Signature
+            X509v3 Extended Key Usage: critical
+                TLS Web Client Authentication
+            X509v3 CRL Distribution Points:
+                Full Name:
+                  URI:http://istupakov.ddns.net:4198/cryptolab.crl
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        ...
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+\end{minted}
+\textit{* расшифровка сертификата}
+
+\subsection{Проверка годности сертификата}
+
+\begin{minted}{console}
+openssl x509 -in client-rem.crt -text | grep URI
+
+    # URI:http://istupakov.ddns.net:4198/cryptolab.crl
+
+wget http://istupakov.ddns.net:4198/cryptolab.crl
+openssl x509 -in client-rem.crt -noout -serial
+
+    # serial=0D49D9EF64105D68083B39624B3F62D141960E51
+
+openssl crl -in cryptolab.crl -text | grep \
+  "0D49D9EF64105D68083B39624B3F62D141960E51"
+
+    # <empty>
+\end{minted}
+\textit{* команды проверки сертификата через CRL (Certificate Revocation List) }
+
+\section{Работа с TLS}
+\subsection{cURL}
+
+\begin{minted}{console}
+curl \
+  --cacert cryptolab-ca.crt \
+  --cert client.crt \
+  --key client.key \
+  --header "Content-Type: application/json" \
+  --data '"Paraskun"' \
+  https://istupakov.ddns.net:4006/api/chat/message
+
+  # curl: (56) OpenSSL SSL_read: SSL_ERROR_SYSCALL, errno 0
+\end{minted}
+\textit{* запрос с использованием сертификата, полученного в части 1}
+
+\begin{minted}{console}
+curl \
+  --cacert cryptolab-ca.crt \
+  --cert client-rem.crt \
+  --key client.key \
+  --header "Content-Type: application/json" \
+  --data '"Paraskun"' \
+  https://istupakov.ddns.net:4006/api/chat/message
+
+  # {
+    "message": "Paraskun",
+    "user": "
+      CN=\"Paraskun, Gerasimenko, Shakirov\",
+      O=Novosibirsk State Technical University,
+      C=RU
+    ",
+    "timestamp": "2024-09-04T13:00:29.5635494Z",
+    "id": "07a0fd60-77fb-43c8-900b-6c8ff0ee24c6"
+  }
+\end{minted}
+\textit{* запрос с использованием сертификата, полученного в части 2}
+
+\subsection{Desktop}
+
+\includegraphics[scale=0.25]{desktop}
+
+\subsection{Mobile}
+
+
+\includegraphics[scale=0.5]{mobile}
+
+\end{document}
+

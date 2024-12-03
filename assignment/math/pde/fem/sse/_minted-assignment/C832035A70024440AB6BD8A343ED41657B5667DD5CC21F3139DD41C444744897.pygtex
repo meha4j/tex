@@ -1,0 +1,59 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}ifndef FEM\PYGZus{}H}
+\PYG{c+cp}{\PYGZsh{}define FEM\PYGZus{}H}
+
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}fem/sse/hex.h\PYGZgt{}}
+
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}vec/mtx.h\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}vec/mtx\PYGZus{}csj.h\PYGZgt{}}
+
+\PYG{c+c1}{// Структура алгоритма}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fem}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{vs}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Количество вершин}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{hs}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Количество элементов}
+\PYG{+w}{  }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{fs}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Количество граней}
+
+\PYG{+w}{  }\PYG{c+c1}{// Список вершин}
+\PYG{+w}{  }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{**}\PYG{+w}{ }\PYG{n}{vtx}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{c+c1}{// Список элементов}
+\PYG{+w}{  }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{hex}\PYG{o}{**}\PYG{+w}{ }\PYG{n}{hex}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{c+c1}{// Список граней}
+\PYG{+w}{  }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fce}\PYG{o}{**}\PYG{+w}{ }\PYG{n}{fce}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{c+c1}{// Параметры}
+\PYG{+w}{  }\PYG{k}{struct}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Список функций}
+\PYG{+w}{    }\PYG{k+kt}{double}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{**}\PYG{n}{fun}\PYG{p}{)(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{*}\PYG{p}{);}
+\PYG{+w}{  }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{n}{pps}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{c+c1}{// Матрица СЛАУ}
+\PYG{+w}{  }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{mtx\PYGZus{}csj}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
+
+\PYG{+w}{  }\PYG{c+c1}{// Вектор правой части СЛАУ}
+\PYG{+w}{  }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vec}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{\PYGZcb{};}
+
+\PYG{c+c1}{// Подпрограмма выделения памяти}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fem}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fem\PYGZus{}new}\PYG{p}{(}\PYG{k+kt}{double}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{**}\PYG{n}{fun}\PYG{p}{)(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vtx}\PYG{o}{*}\PYG{p}{));}
+
+\PYG{c+c1}{// Подпрограмма инициализации из файла}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{fem\PYGZus{}get}\PYG{p}{(}\PYG{k+kt}{FILE}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{obj}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fem}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fem}\PYG{p}{);}
+
+\PYG{c+c1}{// Подпрограмма вычисления локальных матриц и векторов}
+\PYG{c+c1}{// конечных элементов и граней с заданными краевыми}
+\PYG{c+c1}{// условиями}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{fem\PYGZus{}evo}\PYG{p}{(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fem}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fem}\PYG{p}{);}
+
+\PYG{c+c1}{// Подпрограмма сборки СЛАУ}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{fem\PYGZus{}asm}\PYG{p}{(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fem}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fem}\PYG{p}{);}
+
+\PYG{c+c1}{// Подпрограмма решения СЛАУ}
+\PYG{c+c1}{//  q \PYGZhy{} результирующий вектор}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{fem\PYGZus{}slv}\PYG{p}{(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fem}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fem}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{vec}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{q}\PYG{p}{);}
+
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{fem\PYGZus{}cls}\PYG{p}{(}\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fem}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fem}\PYG{p}{);}
+
+\PYG{c+cp}{\PYGZsh{}endif  }\PYG{c+c1}{// FEM\PYGZus{}H}
+\end{Verbatim}

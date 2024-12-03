@@ -1,0 +1,280 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[
+  margin=1in
+]{geometry}
+
+\usepackage[T1, T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{textcomp}
+\usepackage{minted}
+\usepackage{hyperref}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \textsc{Новосибирский государственный технический университет}\par
+  \vspace{1mm}
+  Кафедра прикладной математики\par
+  \vspace{4cm}
+  \textsc{Практическая работа \textnumero 4}\par
+  {\huge\bfseries Симметричные криптографические алгоритмы\par}
+  \vspace{1cm}
+  {\scriptsize ФПМИ, ПМ-24\par}
+  \vspace{1mm}
+  {\itshape\large Параскун И., Шакиров П., Герасименко В.\par}
+  \vfill
+  {\small преподаватель\par}
+  \vspace{1mm}
+  \textsc{Ступаков Илья Михайлович}
+  \vfill
+  \large{Новосибирск, 2024}
+\end{titlepage}
+
+\newpage
+
+\section{Цель}
+Знакомство с симметричными криптографическими алгоритмами.
+
+\section{Advanced Encryption Standard}
+\subsection{Шифрование текста}
+
+\subsubsection{Исходный код}
+\inputminted[lastline=82]{go}{/home/mehandes/go/src/github.com/meha4j/cry/pkg/aex/aex.go}
+
+\subsubsection{Результат}
+\begin{minted}{console}
+[...]$ cry aex -h
+Advanced Encryption Standard extensions.
+
+Usage:
+  cry aex [command]
+
+Available Commands:
+  img         Extension for image encryption.
+  txt         Extension for plain text encryption.
+
+Flags:
+  -h, --help   help for aex
+
+Global Flags:
+      --cacert string   CA certificate to verify peer against
+      --cert string     Client certificate filename
+      --key string      Private key filename
+
+Use "cry aex [command] --help" for more information about a command.
+
+[...]$ cry aex txt -h
+Encrypt (decrypt) message in binary (Base64) and store in Base64 (binary).
+
+Usage:
+  cry aex txt [flags]
+
+Flags:
+      --dec          Decrypt input (default: false).
+  -h, --help         help for txt
+      --in string    Input file (required)
+      --iv string    CBC Initialization Vector file (required)
+      --out string   Output file (default: stdout)
+
+Global Flags:
+      --cacert string   CA certificate to verify peer against
+      --cert string     Client certificate filename
+      --key string      Private key filename
+
+[...]$ /bin/cat msg.txt
+Manual provisioning is slow and cumbersome. Provisioning infrastructure 
+through point-and-click GUIs is error-prone, inefficient, and doesn't 
+scale. The cloud was built for automation, but writing custom scripts 
+for every service’s unique API is time consuming.
+
+[...]$ cry aex txt  \
+  --in msg.txt      \
+  --out msg.cbc     \
+  --iv vec.cbc
+
+Passphrase: unix
+
+[...]$ /bin/cat msg.cbc
+ROkdKmpimWW67bwgzeP6v3R3dWDhq40u92P2gjU/9FLNW4VRGuEZ+Wa2ALhyvPFmcB60k
+E3tfuj6MOHgpJ2lrNGu6oL5JOr0sPelCDqKxjOvI+ozIG88gO08J13AEKuD3hvY9wF1/x
+XelhQix8+dpHugiSg1E7bdPL+y1kR7q5Xd8Kdd9dUxSw1fO/n5zgIZjcwShTqqMwXxCzD
++CxK40duabG8kJymGPfIWMu3Y5TxbVIfWm4kQlP+TaFXUWyv5WsuAgcov7K5TE70TsQhI
+e4vkPKureMnJo38R1aloz8xfm0paWiL462VnNlEg9emULbanSQNJ4UaX8LW/JxDagy8kb
+BROZjIOGEzJU62ub3Y=
+
+[...]$ /bin/cat vec.cbc
+iVPPgTGRxJaDwLnkWlnKGg==
+
+[...]$ cry aex txt  \
+  --dec             \
+  --in msg.cbc      \
+  --iv vec.cbc
+
+Passphrase: unix
+
+Manual provisioning is slow and cumbersome. Provisioning infrastructure
+through point-and-click GUIs is error-prone, inefficient, and doesn't
+scale. The cloud was built for automation, but writing custom scripts
+for every service’s unique API is time consuming.
+
+[...]$ curl \
+  > --cacert .certs/cryptolab-ca.crt \
+  > --cert .certs/client.crt.pem \
+  > --key .certs/client.key \
+  > -F 'text=<msg.cbc' \
+  > -F 'iv=<vec.cbc' \
+  > -v https://istupakov.ddns.net:4006/api/chat/encrypted-message
+
+* Host istupakov.ddns.net:4006 was resolved.
+...
+< location: 
+  https://istupakov.ddns.net:4006/chat/message/ \
+    390c851d-6a52-4d0d-b7c9-9ab1f1ac821c
+< strict-transport-security: max-age=2592000
+< 
+{
+  "message": "
+    ROkdKmpimWW67bwgzeP6v3R3dWDhq40u92P2gjU/9FLNW4VRGuEZ+Wa2ALhyvPFmcB60k
+    E3tfuj6MOHgpJ2lrNGu6oL5JOr0sPelCDqKxjOvI+ozIG88gO08J13AEKuD3hvY9wF1/x
+    XelhQix8+dpHugiSg1E7bdPL+y1kR7q5Xd8Kdd9dUxSw1fO/n5zgIZjcwShTqqMwXxCzD
+    +CxK40duabG8kJymGPfIWMu3Y5TxbVIfWm4kQlP+TaFXUWyv5WsuAgcov7K5TE70TsQhI
+    e4vkPKureMnJo38R1aloz8xfm0paWiL462VnNlEg9emULbanSQNJ4UaX8LW/JxDagy8kb
+    BROZjIOGEzJU62ub3Y=
+  ",
+  "iv": "iVPPgTGRxJaDwLnkWlnKGg==",
+  "mac": null,
+  "user": "
+    CN=\"Paraskun, Gerasimenko, Shakirov\",   
+    O=Novosibirsk State Technical University, 
+    C=RU
+  ",
+  "timestamp": "2024-11-11T03:33:01.4591197Z",
+  "id": "390c851d-6a52-4d0d-b7c9-9ab1f1ac821c"
+}
+\end{minted}
+
+\href{https://istupakov.ddns.net:4006/chat/message/390c851d-6a52-4d0d-b7c9-9ab1f1ac821c}{Click me!}
+
+\subsubsection{Дешифровка}
+\begin{minted}{console}
+[mehandes@neptune ~]$ cry aex txt --dec --in msg.enc --iv vec.enc
+
+Passphrase: 1234
+
+Новосибирский государственный технический университет - прекрасное место, 
+чтобы изучить что-то новое и интересное. А если ты поступишь на факультет 
+прикладной математики и информатики, то узнаешь много нового из таких 
+увлекательных наук, как математика, программирование и физика! Вперёд 
+за приключениями!
+\end{minted}
+
+\href{https://istupakov.ddns.net:4006/chat/message/3656c07a-c29a-4a02-b0f9-71d637159e41}{Click me!}
+
+\subsection{Шифрование изображения}
+
+\subsubsection{Исходный код}
+\inputminted[firstline=82]{go}{/home/mehandes/go/src/github.com/meha4j/cry/pkg/aex/aex.go}
+
+\subsubsection{Результат}
+\begin{minted}{console}
+[...]$ cry aex img -h
+Encrypt (decrypt) image using ECB or CBC mode.
+
+Usage:
+  cry aex img [flags]
+
+Flags:
+      --dec           Decrypt image (default: false).
+  -h, --help          help for img
+      --hmac string   Calculate HMAC from resulting image.
+      --in string     Input image name (required).
+      --iv string     CBC Initialization Vector file (required for CBC)
+      --mode string   Mode of operation: ecb or cbc (required).
+      --out string    Output image name (required).
+
+Global Flags:
+      --cacert string   CA certificate to verify peer against
+      --cert string     Client certificate filename
+      --key string      Private key filename
+
+[...]$ cry aex img      \
+  --mode ecb            \
+  --in img.png          \
+  --out img.ecb.png     \
+  --hmac hmac.ecb
+
+Passphrase: unix
+
+[...]$ curl -v                        \
+  > --cacert .certs/cryptolab-ca.crt  \
+  > --cert .certs/client.crt.pem      \
+  > --key .certs/client.key           \
+  > -F 'file=@img.ecb.png'            \
+  > -F 'mac=<hmac.ecb'                \
+  > https://istupakov.ddns.net:4006/api/chat/encrypted-image
+
+* Host istupakov.ddns.net:4006 was resolved.
+...
+< location: https://istupakov.ddns.net:4006/chat/message/\
+  092eb869-beba-4ce7-9062-30c95ca46ded
+< strict-transport-security: max-age=2592000
+<
+* Connection #0 to host istupakov.ddns.net left intact
+{
+  "iv" :null,
+  "mac": "AZtE9o++uODQs+6JJOj3AVpzrDBloIlAtBu8gsNyaqg=",
+  "user": "
+    CN=\"Paraskun, Gerasimenko, Shakirov\", 
+    O=Novosibirsk State Technical University, 
+    C=RU
+  ",
+  "timestamp": "2024-11-11T15:21:38.4276672Z",
+  "id":"092eb869-beba-4ce7-9062-30c95ca46ded"
+}
+
+[...]$ cry aex img  \
+  --mode cbc        \
+  --in img.png      \
+  --out img.cbc.png \
+  --iv vec.cbc      \
+  --hmac hmac.cbc
+
+Passphrase: unix
+
+[...]$ curl -v                        \
+  > --cacert .certs/cryptolab-ca.crt  \
+  > --cert .certs/client.crt.pem      \
+  > --key .certs/client.key           \
+  > -F 'file=@img.cbc.png'            \
+  > -F 'iv=<vec.cbc'                  \
+  > -F 'mac=<hmac.cbc'                \
+  > https://istupakov.ddns.net:4006/api/chat/encrypted-image
+
+* Host istupakov.ddns.net:4006 was resolved.
+...
+< location: https://istupakov.ddns.net:4006/chat/message/\
+  f9fecdda-9e34-4e8c-a00b-4d8b4f4a2c8c
+< strict-transport-security: max-age=2592000
+<
+* Connection #0 to host istupakov.ddns.net left intact
+{
+  "iv": "dsASHg+LIbk8DfbGfvIypA==",
+  "mac": "MlIriDpnlVW94rayqR4IORy5fvd3vRq85tK6XppbIvc=",
+  "user": "
+    CN=\"Paraskun, Gerasimenko, Shakirov\", 
+    O=Novosibirsk State Technical University, 
+    C=RU
+  ",
+  "timestamp": "2024-11-11T15:30:33.6017492Z",
+  "id": "f9fecdda-9e34-4e8c-a00b-4d8b4f4a2c8c"
+}
+\end{minted}
+
+\par\textit{\href{https://istupakov.ddns.net:4006/chat/message/092eb869-beba-4ce7-9062-30c95ca46ded}{Click me! (ECB)}}
+\par\textit{\href{https://istupakov.ddns.net:4006/chat/message/f6c47169-97ff-4c58-8f77-baa32fb2b3af}{Click me! (CBC)}}
+
+\end{document}
+

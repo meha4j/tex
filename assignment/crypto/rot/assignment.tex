@@ -1,0 +1,274 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[
+  margin=1in
+]{geometry}
+
+\usepackage[T1, T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{textcomp}
+\usepackage{minted}
+\usepackage{hyperref}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \textsc{Новосибирский государственный технический университет}\par
+  \vspace{1mm}
+  Кафедра прикладной математики\par
+  \vspace{4cm}
+  \textsc{Практическая работа \textnumero 2}\par
+  {\huge\bfseries Элементарные методы шифрования\par}
+  \vspace{1cm}
+  {\scriptsize ФПМИ, ПМ-24\par}
+  \vspace{1mm}
+  {\itshape\large Параскун И., Шакиров П., Герасименко В.\par}
+  \vfill
+  {\small преподаватель\par}
+  \vspace{1mm}
+  \textsc{Ступаков Илья Михайлович}
+  \vfill
+  \large{Новосибирск, 2024}
+\end{titlepage}
+
+\newpage
+
+\section{Цель}
+Знакомство с элементарными методами шифрования данных и криптоанализа.
+
+\section{Шифрование методом простой замены}
+\subsection{Разработать программу для генерации ключа}
+
+\begin{minted}{go}
+type PrivateKey map[rune]rune
+
+func GenerateKey(rand io.Reader) (*PrivateKey, error) {
+	var rnd [33]byte
+
+	_, err := rand.Read(rnd[:])
+
+	if err != nil {
+		return nil, err
+	}
+
+	var key PrivateKey = make(map[rune]rune, 34)
+
+	for i := 1072; i < 1105; i++ {
+		key[rune(i)] = rune(i)
+	}
+
+	for i := 32; i > 0; i-- {
+		rnd[i] = uint8(float64(rnd[i]) / 0xff.p0 * float64(i))
+
+		a := rune(i) + 1072
+		b := rune(rnd[i]) + 1072
+
+		if key[b] == 1104 {
+			key[b] = 1105
+		}
+
+		key[a], key[b] = key[b], key[a]
+	}
+
+	key[1105] = key[1104]
+	delete(key, 1104)
+
+	return &key, nil
+}
+
+func (key *PrivateKey) String() string {
+	var sb strings.Builder
+
+	for i := 1072; i < 1078; i++ {
+		sb.WriteRune((*key)[rune(i)])
+	}
+
+	sb.WriteRune((*key)[1105])
+
+	for i := 1078; i < 1104; i++ {
+		sb.WriteRune((*key)[rune(i)])
+	}
+
+	return sb.String()
+}
+\end{minted}
+
+\begin{minted}{console}
+[...]$ crypto rot kgen -h
+
+Generate private key using Fisher-Yates shuffle.
+
+Usage:
+  crypto rot kgen [flags]
+
+Flags:
+  -h, --help         help for kgen
+  -o, --out string   output file, default: stdout
+
+[...]$ crypto rot kgen
+
+ихъарцюфйщэнпляужмебгёктсьчшводыз
+\end{minted}
+
+\subsection{Разработать программу для шифрования текста}
+
+\begin{minted}{go}
+type Encoder struct {
+	key *PrivateKey
+	src io.RuneReader
+}
+
+func NewEncoder(key *PrivateKey, src io.RuneReader) *Encoder {
+	return &Encoder{key, src}
+}
+
+func (enc *Encoder) Read(b []byte) (s int, err error) {
+	for {
+		r, _, err := enc.ReadRune()
+
+		if err != nil {
+			return s, err
+		}
+
+		if utf8.RuneLen(r) > len(b) {
+			return s, nil
+		}
+
+		l := utf8.EncodeRune(b, r)
+
+		b = b[l:]
+		s = s + l
+	}
+}
+
+func (enc *Encoder) ReadRune() (rune, int, error) {
+	for {
+		r, _, err := enc.src.ReadRune()
+
+		if err != nil {
+			return utf8.RuneError, 0, err
+		}
+
+		r = unicode.ToLower(r)
+		r, ok := (*enc.key)[r]
+
+		if !ok {
+			continue
+		}
+
+		return r, utf8.RuneLen(r), nil
+	}
+}
+\end{minted}
+
+\begin{minted}{console}
+[...]$ crypto rot -h
+Simple substitution encryption.
+
+Usage:
+  crypto rot [flags]
+  crypto rot [command]
+
+Available Commands:
+  kgen        Generate private key using Fisher-Yates shuffle.
+
+Flags:
+  -d, --dec          decrypt given input
+  -h, --help         help for rot
+  -i, --in string    input file, default: stdin
+  -k, --key string   key file (required)
+  -o, --out string   output file, default: stdout
+
+Use "crypto rot [command] --help" for more information about a command.
+
+[...]$ ls -lh
+... 1.9M Oct 26 20:29 essay.txt
+...   67 Oct 26 20:28 ru.key
+
+[...]$                                                    \
+          date +%S.%3N;                                   \
+          crypto rot -i essay.txt -o essay.rot -k ru.key; \
+          date +%S.%3N
+
+21.703
+21.770
+
+[...]$ ls -lh
+... 1.7M Oct 26 20:34 essay.rot
+... 1.9M Oct 26 20:29 essay.txt
+...   67 Oct 26 20:28 ru.key
+\end{minted}
+
+\subsection{Зашифровать эссе}
+
+\begin{minted}{text}
+Криптография — это наука о защите информации, играющая ключевую 
+роль в современном мире. Она обеспечивает безопасность данных, 
+позволяя передавать личные и финансовые сведения без риска их перехвата. 
+Современные методы обеспечивают конфиденциальность и целостность 
+информации, что особенно важно в эпоху цифровизации и глобализации.
+\end{minted}
+
+\begin{minted}{console}
+[...]$ crypto rot -i essay.in ru.key
+хтжяцйчтлгждшцйнлёхлйулвжцфжнгйтълпжжжчтлэвлдхоэефиёэтйозищйит
+фъфннйъъжтфйнлймфщяфежилфцмфуйялщнйщцзюлннкряйуийоддяфтфюлилцз
+оженкфжгжнлнщйикфщифюфнждмфутжщхлжряфтфрилцлщйитфъфннкфъфцйюкй
+мфщяфежилэцхйнгжюфнпжлознйщцзжпфойщцнйщцзжнгйтълпжжецййщймфннй
+илынйишяйрёпжгтйижулпжжжчоймложулпжж
+\end{minted}
+
+\textit{\href{https://istupakov.ddns.net:4006/chat/message/b8af3253-be42-47d9-a560-489afcfa8bdd}{Click me!}}
+
+
+\section{Ручная дешифровка}
+
+\begin{minted}{text}
+рцъчдхрныщаъеегпабдафъъафщевцбртещерзыяельеэшащъьегекбеьзрцвцщ
+умзъэдбцэогнощамньещэдёдаещхермцэубзсщатъщеьфъъакцищьелмевбеъщ
+уцьщерняаракцщуъьеиьдкабдаднбдтцэубзыьлюэшкбцьапдьцвбзмцъяатще
+мшьэшащъшъяеъегбеъщуцрюнмабщдреьцщуъьеощеётнлрабдшдрцлмзчэшщуб
+цкьеяреъцмдлцщрцюдьцопдмдёдщцщаэшллнщцъбмьбтньэгвцбскшлэжцйцит
+юдёшръымтябьощёщлтюьоиеашъмчшкёчфйидщй
+\end{minted}
+
+\begin{minted}{text}
+> зьтсйнмъврчлхюэицшыпкабежудяфёщог (начальный ключ)
+
+ипжйщлиесэфжццятфхщфыжжфыэцзпхивцэциасъцкбцнрфэжбцяцухцбаипзпэ
+шёажнщхпнюяеюэфёебцэнщьщфцэлциёпншхагэфвжэцбыжжфупоэбцкёцзхцжэ
+шпбэциеъфифупэшжбцобщуфхщфщехщвпншхасбкмнрухпбфтщбпзхаёпжъфвэц
+ёрбнрфэжржъцжцяхцжэшпимеёфхэщицбпэшжбцюэцьвекифхщрщипкёайнрэшх
+пубцъицжпёщкпэипмщбпютщёщьщэпэфнрккеэпжхёбхвебнязпхгуркнчпдпов
+мщьрижсёвъхбюэьэквмбюоцфржёйруьйыдощэд
+\end{minted}
+
+\begin{minted}{text}
+> цгтсйамувдылкюбезръщнхэижчпяфёшоь (учтена данная информация)
+
+расшифруйтесообщениеыссеытозанрвоторпйъокяохэетсяоболнояпразат
+жёпсхинахюбуютеёуяотхиьиеотфорёахжнпгтевстояысселацтяокёозност
+жаяторуъерелатжсяоцяилениеиунивахжнпйякмхэлнаяещияазнпёасъевто
+ёэяхэетсэсъособностжармуёентирояатжсяоютоьвукрениэиракёпшхэтжн
+аляоъросаёикатрамияающиёиьитатехэккутаснёянвуяхбзанглэкхчадацв
+миьэрсйёвъняютьтквмяюцоеэсёшэльшыдцитд
+\end{minted}
+
+\begin{minted}{text}
+> цгьюкаивлдытэмбеяръщнхсжёчпйзуфош
+
+расшифруйтесообщениеэссеэтожанркоторыйпозволяетсвободновыражат
+ьмыслиналюбуютемувотличиеотформальныхтекстовэсседаётвозможност
+ьавторупередатьсвоёвидениеиуникальныйвзгляднавещиважнымаспекто
+мявляетсяспособностьаргументироватьсвоюточкузренияиразмышлятьн
+адвопросамизатрагивающимичитателяззутаснмвнкувлбжанхдязлцаъаёк
+гичярсймкпнвютчтзкгвюёоеясмшядчшэъёитъ
+\end{minted}
+
+\textit{\textbf{цгьюкаивлдытэмбеяръщнхсжёчпйзуфош}}
+
+
+\end{document}
+

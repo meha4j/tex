@@ -12,6 +12,8 @@
 \usepackage{tabularray}
 \usepackage{amsmath}
 \usepackage{float}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \begin{document}
 
@@ -58,13 +60,72 @@
     максимального количества итераций;
 \end{itemize}
 
-\section{Исходный код}
-\subsection{Стабилизированный метод бисопряжённых градиентов}
-\subsection{Стабилизированный метод бисопряжённых градиентов c предобуславливанием}
-\subsection{ILU разложение}
+\section{Стабилизированный метод бисопряжённых градиентов}
+\subsection{Алгоритм}
+
+\begin{algorithm}[H]
+\caption{Стабилизированный метод бисопряжённых градиентов}\label{alg:bcgstab}
+\begin{algorithmic}
+\State $r_0 = b - Ax_0$
+\State $\hat{r}_0 = r_0$
+\State $p_0 = r_0$
+
+\For{$j=0, 1, ...$}
+\State $\alpha_j = (r_j, \hat{r}_0)/(Ap_j, \hat{r}_0)$
+\State $s_j = r_j - \alpha_j Ap_j$
+\State $\omega_j = (As_j, s_j)/(As_j, As_j)$
+\State $x_{j+1} = x_j + \alpha_j p_j + \omega_j s_j$
+\State $r_{j+1} = s_j - \omega_j As_j$
+
+\If{$||r_{j+1}|| < \varepsilon$}
+\State complete
+\EndIf
+
+\State $\beta_j = (r_{j+1}, \hat{r}_0) / (r_j, \hat{r}_0) * \alpha_j / \omega_j$
+\State $p_{j+1} = r_{j+1} + \beta_j(p_j - \omega_j Ap_j)$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Исходный код}
+
+\inputminted[firstline=5, lastline=78]{c}{/home/mehandes/c/src/github.com/meha4j/math/vec/iss/src/iss_csj.c}
+
+\section{Стабилизированный метод бисопряжённых градиентов c предобуславливанием}
+\subsection{Алгоритм}
+
+\begin{algorithm}[H]
+\caption{Стабилизированный метод бисопряжённых градиентов с правым предобуславливанием}\label{alg:bcgstabcon}
+\begin{algorithmic}
+\State $r_0 = b - Ax_0$
+\State $\hat{r}_0 = r_0$
+\State $p_0 = r_0$
+
+\For{$j=0, 1, ...$}
+\State $\hat{p}_j = M^{-1}p_j$
+\State $\alpha_j = (r_j, \hat{r}_0)/(A\hat{p}_j, \hat{r}_0)$
+\State $s_j = r_j - \alpha_j A\hat{p}_j$
+\State $\hat{s}_j = M^{-1}s_j$
+\State $\omega_j = (A\hat{s}_j, s_j)/(A\hat{s}_j, A\hat{s}_j)$
+\State $x_{j+1} = x_j + \alpha_j \hat{p}_j + \omega_j \hat{s}_j$
+\State $r_{j+1} = s_j - \omega_j A\hat{s}_j$
+
+\If{$||r_{j+1}|| < \varepsilon$}
+\State complete
+\EndIf
+
+\State $\beta_j = (r_{j+1}, \hat{r}_0) / (r_j, \hat{r}_0) * \alpha_j / \omega_j$
+\State $p_{j+1} = r_{j+1} + \beta_j(p_j - \omega_j A\hat{p}_j)$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Исходный код}
+
+\inputminted[firstline=80, lastline=232]{c}{/home/mehandes/c/src/github.com/meha4j/math/vec/iss/src/iss_csj.c}
 
 \section{Исследование}
-\subsubsection{Матрица со значительным диагональным преобладанием}
+\subsection{Матрица со значительным диагональным преобладанием}
 
 \begin{table}[H]
 \centering
@@ -74,7 +135,7 @@
   rowspec={|c|c|}
 }
 \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$ & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$ & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
-1.9621E+01	         & 1.9621E+01	           & 5.3658E-08	               & 9.9989E-11	         & 137040	         & 2.7349E+01
+1.9621e+01	                  & 1.9621e+01	                   & 0.0000e+00	                                 & 1.7985e-19	                  & 10	            & 0.321886
 \end{tblr}
 \caption{Результат работы алгоритма без предобуславливания}
 \end{table}
@@ -87,7 +148,7 @@
   rowspec={|c|c|}
 }
 \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$ & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$ & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
-1.9621E+01	         & 1.9621E+01	           & 5.3658E-08	               & 9.9989E-11	         & 137040	         & 2.7349E+01
+1.9599e+01	                  & 1.9621e+01	                   & 2.2619e-02	                                 & 6.4436e-16	                  & 90	            & 3.150197
 \end{tblr}
 \caption{Результат работы алгоритма с ILU предобуславливанием}
 \end{table}
@@ -100,107 +161,86 @@
   rowspec={|c|c|}
 }
 \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$ & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$ & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
-1.9621E+01	         & 1.9621E+01	           & 5.3658E-08	               & 9.9989E-11	         & 137040	         & 2.7349E+01
-\end{tblr}
-\caption{Результат работы алгоритма с диагональным предобуславливанием}
-\end{table}
-
-
-\subsubsection{Матрицы Гильберта}
-
-\begin{table}[H]
-\centering
-\begin{tblr}{
-  width=\textwidth, 
-  colspec={|c|X|X|X|X|c|X|},
-  rowspec={|c|ccccccc|}
-}
-\SetCell{c} $k$ & \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$  & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$  & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
-3               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-4               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-5               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-6               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-7               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-8               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-9               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01
-\end{tblr}
-\caption{Результат работы алгоритма без предобуславливания}
-\end{table}
-
-\begin{table}[H]
-\centering
-\begin{tblr}{
-  width=\textwidth, 
-  colspec={|c|X|X|X|X|c|X|},
-  rowspec={|c|ccccccc|}
-}
-\SetCell{c} $k$ & \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$  & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$  & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
-3               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-4               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-5               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-6               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-7               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-8               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-9               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01
-\end{tblr}
-\caption{Результат работы алгоритма с ILU предобуславливанием}
-\end{table}
-
-\begin{table}[H]
-\centering
-\begin{tblr}{
-  width=\textwidth, 
-  colspec={|c|X|X|X|X|c|X|},
-  rowspec={|c|ccccccc|}
-}
-\SetCell{c} $k$ & \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$  & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$  & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
-3               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-4               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-5               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-6               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-7               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-8               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
-9               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01
+1.9661e+01	                  & 1.9621e+01	                   & 3.9812e-02	                                 & 7.6221e-16	                  & 47	            & 1.544534
 \end{tblr}
 \caption{Результат работы алгоритма с диагональным предобуславливанием}
 \end{table}
 
 \newpage
 
-\subsection{Тестовые данные}
-\subsubsection{Матрица с отрицательными внедиагональными элементами}
-\begin{minted}{console}
-  6  -3   0   0  -1   0   0  -1   0   0
- -2   5  -1   0   0  -2   0   0   0   0
-  0  -1   6  -2   0   0  -2   0   0  -1
-  0   0  -1   1   0   0   0   0   0   0
- -3   0   0  -3  13  -3   0   0  -4   0
-  0  -2   0   0  -2   7   0   0   0  -3
-  0   0   0   0   0  -4   5  -1   0   0
- -3   0   0  -4   0   0  -2  11  -2   0
-  0  -4   0   0  -2   0   0   0  10  -4 
-  0   0  -2   0   0  -2   0   0  -2   6 
-\end{minted}
+\subsection{Матрицы Гильберта}
 
-\noindent$\nu_A = ||A||*||A^{-1}|| = 1018.5$ \textit{(первая норма)} \\
-\noindent$\nu_A = ||A||*||A^{-1}|| = 370.89$ \textit{(вторая норма)}
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|c|X|X|X|X|c|X|},
+  rowspec={|c|ccccccc|}
+}
+\SetCell{c} $k$ & \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$  & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$  & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
+3               & 3.7416e+00	                  & 3.7416e+00	                    & 3.1086e-15	                                & 1.3270e-18	                  & 4	              & 0.328823            \\
+4               & 5.4772e+00	                  & 5.4772e+00	                    & 1.6881e+01	                                & 1.0222e-16	                  & 6	              & 0.233018            \\
+5               & 7.4161e+00	                  & 7.4161e+00	                    & 1.4974e-12	                                & 4.0491e-16	                  & 8	              & 0.308553            \\
+6               & 9.5393e+00	                  & 9.5393e+00	                    & 5.5759e-12	                                & 1.7839e-16	                  & 12	            & 0.508497            \\
+7               & 1.1832e+01	                  & 1.1832e+01	                    & 1.9718e-10	                                & 8.1263e-16	                  & 32	            & 1.314948            \\
+8               & 1.4282e+01	                  & 1.4282e+01	                    & 1.5787e-09	                                & 9.6661e-16	                  & 720	            & 27.162724           \\
+9               & 1.6881e+01	                  & 1.6881e+01	                    & 5.3014e-09	                                & 8.4781e-16	                  & 58	            & 1.823285
+\end{tblr}
+\caption{Результат работы алгоритма без предобуславливания}
+\end{table}
 
-\subsubsection{Матрица с положительными внедиагональными элементами}
-\begin{minted}{console}
-  6   3   0   0   1   0   0   1   0   0
-  2   5   1   0   0   2   0   0   0   0
-  0   1   6   2   0   0   2   0   0   1
-  0   0   1   1   0   0   0   0   0   0
-  3   0   0   3  13   3   0   0   4   0
-  0   2   0   0   2   7   0   0   0   3
-  0   0   0   0   0   4   5   1   0   0
-  3   0   0   4   0   0   2  11   2   0
-  0   4   0   0   2   0   0   0  10   4 
-  0   0   2   0   0   2   0   0   2   6 
-\end{minted}
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|c|X|X|X|X|c|X|},
+  rowspec={|c|ccccccc|}
+}
+\SetCell{c} $k$ & \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$  & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$  & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
+3               & 3.7417e+00	                  & 3.7417e+00	                    & 1.0658e-14	                                & 1.6373e-16	                  & 1               & 0.031689            \\
+4               & -	                            & -	                              & -	                                          & -	                            & -	              & -                   \\
+5               & 7.4162e+00	                  & 7.4162e+00	                    & 1.5543e-13	                                & 3.0220e-16	                  & 1	              & 0.030217            \\
+6               & 9.5394e+00	                  & 9.5394e+00	                    & 2.9488e-13	                                & 4.1796e-16	                  & 1	              & 0.030217            \\
+7               & 1.1832e+01	                  & 1.1832e+01	                    & 1.0085e-10	                                & 2.6456e-16	                  & 2	              & 0.063329            \\
+8               & 1.4283e+01	                  & 1.4283e+01	                    & 1.0148e-09	                                & 4.6718e-16	                  & 2	              & 0.063238            \\
+9               & 1.6882e+01	                  & 1.6882e+01	                    & 8.7433e-09	                                & 5.3738e-16	                  & 2	              & 0.066054
+\end{tblr}
+\caption{Результат работы алгоритма с ILU предобуславливанием}
+\end{table}
 
-\noindent$\nu_A = ||A||*||A^{-1}|| = 71.980$ \textit{(первая норма)} \\
-\noindent$\nu_A = ||A||*||A^{-1}|| = 42.194$ \textit{(вторая норма)}
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|c|X|X|X|X|c|X|},
+  rowspec={|c|ccccccc|}
+}
+\SetCell{c} $k$ & \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$  & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$  & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
+3               & 4.7816e+00	                  & 3.7417e+00	                    & 1.0399e+00	                                & 9.9973e-16	                  & 197	            & 6.722964            \\
+4               & 8.6669e+00	                  & 5.4772e+00	                    & 3.1896e+00	                                & 7.8658e-16	                  & 2457	          & 80.679855           \\
+5               & 1.3008e+01	                  & 7.4162e+00	                    & 5.5917e+00	                                & 9.9988e-16	                  & 64030	          & 2073.690887         \\
+6               & 1.8819e+01	                  & 9.5394e+00	                    & 9.2799e+00	                                & 4.8088e-10	                  & 200000	        & -                   \\
+7               & 2.7312e+01	                  & 1.1832e+01	                    & 1.5479e+01	                                & 3.2752e-11	                  & 200000	        & -                   \\
+8               & 3.7854e+01	                  & 1.4283e+01	                    & 2.3571e+01	                                & 3.0592e-10	                  & 200000	        & -                   \\
+9               & 7.0377e+01	                  & 1.6882e+01	                    & 5.3495e+01	                                & 1.3261e-09	                  & 200000	        & -
+\end{tblr}
+\caption{Результат работы алгоритма с диагональным предобуславливанием}
+\end{table}
+
+\newpage
+
+\section{Неполное LU разложение}
+\subsection{Теоретическая часть}
+
+\begin{align}
+  &L_{ii} = U_{ii} = \sqrt{A_{ii} - \sum_{k < i}L_{ik}U_{ki}} \\[1ex]
+  &L_{ij} = \frac{1}{S_{jj}} \left[ A_{ij} - \sum_{k < j}L_{ik}U_{ki} \right] \\[1ex]
+  &U_{ji} = \frac{1}{S_{jj}} \left[ A_{ji} - \sum_{k < j}L_{jk}U_{ki} \right]
+\end{align}
+
+\subsection{Исходный код}
+
+\inputminted[firstline=104, lastline=170]{c}{/home/mehandes/c/src/github.com/meha4j/math/vec/mtx/src/mtx_csj.c}
 
 \end{document}
 

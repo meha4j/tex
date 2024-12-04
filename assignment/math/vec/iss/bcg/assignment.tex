@@ -1,0 +1,206 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[
+  margin=1in
+]{geometry}
+
+\usepackage[T1, T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{minted}
+\usepackage{hyperref}
+\usepackage{tabularray}
+\usepackage{amsmath}
+\usepackage{float}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \textsc{Новосибирский государственный технический университет}\par
+  \vspace{1mm}
+  Кафедра прикладной математики\par
+  \vspace{4cm}
+  \textsc{Практическая работа \textnumero 3}\par
+  {\huge\bfseries Стабилизированный метод бисопряжённых градиентов\par}
+  \vspace{1cm}
+  {\scriptsize ФПМИ, ПМ-24\par}
+  \vspace{1mm}
+  {\itshape\large Параскун И., Герасименко В.\par}
+  \vfill
+  {\small преподаватели\par}
+  \vspace{2mm}
+  \textsc{Рояк М. Э., д.т.н., профессор}\par
+  \vspace{1mm}
+  \textsc{Задорожный А. Г., к.т.н., доцент}\par
+  \vspace{1mm}
+  \textsc{Леонович Д. А., ассистент}\par
+  \vfill
+  \large{Новосибирск, 2024}
+\end{titlepage}
+
+\newpage
+
+\setcounter{page}{2}
+\tableofcontents
+
+\newpage
+
+\section{Постановка задачи}
+Реализовать стабилизированный метод бисопряжённых градиентов для матриц в строчно-столбцовом 
+формате с учётом следующих требований:
+
+\begin{itemize}
+  \item Матрица должна обрабатываться в соответствии с форматом;
+  \item Выход из итерационного процесса выполнять, если относительная 
+    невязка стала меньше заданного параметра;
+  \item Предусмотреть аварийный выход из итерационного процесса при достижении 
+    максимального количества итераций;
+\end{itemize}
+
+\section{Исходный код}
+\subsection{Стабилизированный метод бисопряжённых градиентов}
+\subsection{Стабилизированный метод бисопряжённых градиентов c предобуславливанием}
+\subsection{ILU разложение}
+
+\section{Исследование}
+\subsubsection{Матрица со значительным диагональным преобладанием}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|X|X|X|X|c|X|},
+  rowspec={|c|c|}
+}
+\SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$ & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$ & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
+1.9621E+01	         & 1.9621E+01	           & 5.3658E-08	               & 9.9989E-11	         & 137040	         & 2.7349E+01
+\end{tblr}
+\caption{Результат работы алгоритма без предобуславливания}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|X|X|X|X|c|X|},
+  rowspec={|c|c|}
+}
+\SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$ & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$ & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
+1.9621E+01	         & 1.9621E+01	           & 5.3658E-08	               & 9.9989E-11	         & 137040	         & 2.7349E+01
+\end{tblr}
+\caption{Результат работы алгоритма с ILU предобуславливанием}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|X|X|X|X|c|X|},
+  rowspec={|c|c|}
+}
+\SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$ & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$ & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
+1.9621E+01	         & 1.9621E+01	           & 5.3658E-08	               & 9.9989E-11	         & 137040	         & 2.7349E+01
+\end{tblr}
+\caption{Результат работы алгоритма с диагональным предобуславливанием}
+\end{table}
+
+
+\subsubsection{Матрицы Гильберта}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|c|X|X|X|X|c|X|},
+  rowspec={|c|ccccccc|}
+}
+\SetCell{c} $k$ & \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$  & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$  & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
+3               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+4               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+5               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+6               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+7               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+8               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+9               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01
+\end{tblr}
+\caption{Результат работы алгоритма без предобуславливания}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|c|X|X|X|X|c|X|},
+  rowspec={|c|ccccccc|}
+}
+\SetCell{c} $k$ & \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$  & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$  & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
+3               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+4               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+5               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+6               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+7               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+8               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+9               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01
+\end{tblr}
+\caption{Результат работы алгоритма с ILU предобуславливанием}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|c|X|X|X|X|c|X|},
+  rowspec={|c|ccccccc|}
+}
+\SetCell{c} $k$ & \SetCell{c} $||\textbf{x}||$  & \SetCell{c} $||\textbf{x}^*||$  & \SetCell{c} $||\textbf{x}^* - \textbf{x}||$ & \SetCell{c} $||\textbf{r}||$  & \SetCell{c} $N$ & \SetCell{c} $t, ms$ \\
+3               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+4               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+5               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+6               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+7               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+8               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01          \\
+9               & 1.9621E+01	                  & 1.9621E+01	                    & 5.3658E-08	                                & 9.9989E-11	                  & 137040	        & 2.7349E+01
+\end{tblr}
+\caption{Результат работы алгоритма с диагональным предобуславливанием}
+\end{table}
+
+\newpage
+
+\subsection{Тестовые данные}
+\subsubsection{Матрица с отрицательными внедиагональными элементами}
+\begin{minted}{console}
+  6  -3   0   0  -1   0   0  -1   0   0
+ -2   5  -1   0   0  -2   0   0   0   0
+  0  -1   6  -2   0   0  -2   0   0  -1
+  0   0  -1   1   0   0   0   0   0   0
+ -3   0   0  -3  13  -3   0   0  -4   0
+  0  -2   0   0  -2   7   0   0   0  -3
+  0   0   0   0   0  -4   5  -1   0   0
+ -3   0   0  -4   0   0  -2  11  -2   0
+  0  -4   0   0  -2   0   0   0  10  -4 
+  0   0  -2   0   0  -2   0   0  -2   6 
+\end{minted}
+
+\noindent$\nu_A = ||A||*||A^{-1}|| = 1018.5$ \textit{(первая норма)} \\
+\noindent$\nu_A = ||A||*||A^{-1}|| = 370.89$ \textit{(вторая норма)}
+
+\subsubsection{Матрица с положительными внедиагональными элементами}
+\begin{minted}{console}
+  6   3   0   0   1   0   0   1   0   0
+  2   5   1   0   0   2   0   0   0   0
+  0   1   6   2   0   0   2   0   0   1
+  0   0   1   1   0   0   0   0   0   0
+  3   0   0   3  13   3   0   0   4   0
+  0   2   0   0   2   7   0   0   0   3
+  0   0   0   0   0   4   5   1   0   0
+  3   0   0   4   0   0   2  11   2   0
+  0   4   0   0   2   0   0   0  10   4 
+  0   0   2   0   0   2   0   0   2   6 
+\end{minted}
+
+\noindent$\nu_A = ||A||*||A^{-1}|| = 71.980$ \textit{(первая норма)} \\
+\noindent$\nu_A = ||A||*||A^{-1}|| = 42.194$ \textit{(вторая норма)}
+
+\end{document}
+

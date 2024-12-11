@@ -73,14 +73,14 @@
   &u|_{S_1} = u_g \\[1ex]
   &\lambda \frac{\partial{u}}{\partial{n}}\bigg\rvert_{S_2} = \theta \\[1ex]
   &\lambda \frac{\partial{u}}{\partial{n}}\bigg\rvert_{S_3} + 
-    \beta (u\rvert_{S_3} - u{\beta}) = 0
+    \beta (u\rvert_{S_3} - u_{\beta}) = 0
 \end{align}
 \end{fleqn}
 
 \item Базисные функции - линейные на прямоугольных параллелепипедах.
 \item Коэффициент диффузии - кусочно-постоянная функция.
 \item Матрицы в разреженном строчном формате.
-\item Решение СЛАУ с использованием ЛОС с ILU факторизацией.
+\item Решение СЛАУ с использованием стабилизированного метода бисопряжённых градиентов.
 \end{itemize}
 
 \section{Теоретическая часть}
@@ -297,33 +297,6 @@
 \end{align}
 
 \vspace{3mm}
-\noindent Учитывая вид базисных функций \ref{9}:
-
-\begin{align}
-  \begin{split}
-    \hat{b}_i 
-    = \sum_{j}\hat{q}_j^g
-      \int_{x_p}^{x_{p+1}}&X_{\mu(i)}\frac{\partial{X_{\mu(j)}}}{\partial{x}}dx
-      \int_{y_s}^{y_{s+1}}Y_{\nu(i)}Y_{\nu(j)}dy
-      \int_{z_r}^{z_{r+1}}Z_{\vartheta(i)}Z_{\vartheta(j)}dz = \\
-    = &\sum_{j}\hat{q}_j^g 
-      X_{\mu(i)\mu(j)} 
-      \hat{M}_{\nu(i)\nu(j)}^y 
-      \hat{M}_{\vartheta(i)\vartheta(j)}^z
-  \end{split}
-\end{align}
-
-\noindent где
-
-\begin{align}
-  \textbf{X} = 
-    \begin{pmatrix}
-      -\frac{1}{2} & \frac{1}{2} \\
-      -\frac{1}{2} & \frac{1}{2}
-    \end{pmatrix}
-\end{align}
-
-\vspace{3mm}
 \noindent Для правой части, заданной в явном виде:
 
 \begin{align}
@@ -390,27 +363,20 @@
 \end{align}
 
 \section{Описание разработанных программ}
-\subsection{Узел}
+\subsection{Узлы}
+\inputminted[firstline=4, lastline=13]{c}{/home/mehandes/c/src/github.com/paraskun/math/pde/fem/sse/include/fem/sse/vtx.h}
 
-\inputminted[firstline=4, lastline=20]{c}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/include/fem/sse/vtx.h}
+\subsection{Грани}
+\inputminted[firstline=8, lastline=52]{c}{/home/mehandes/c/src/github.com/paraskun/math/pde/fem/sse/include/fem/sse/fce.h}
 
-\subsection{Конечный элемент}
-
-\inputminted[firstline=9, lastline=45]{c}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/include/fem/sse/hex.h}
-
-\subsection{Грань}
-
-\inputminted[firstline=8, lastline=77]{c}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/include/fem/sse/fce.h}
-
-\subsection{Структура алгоритма}
-
-\inputminted[firstline=9, lastline=53]{c}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/include/fem/sse/fem.h}
+\subsection{Прямоугольные параллелепипеды}
+\inputminted[firstline=9, lastline=33]{c}{/home/mehandes/c/src/github.com/paraskun/math/pde/fem/sse/include/fem/sse/hex.h}
 
 \section{Описание тестирования программ}
 \subsection{Тестирование на одном конечном элементе}
 \subsubsection{Описание задачи}
 
-Простейшая расчетная область для тестирования трилинейных элементов выглядит следующим образом:
+Простейшая расчётная область для тестирования трилинейных элементов выглядит следующим образом:
 
 \vspace{5mm}
 \begin{figure}[H]
@@ -418,56 +384,56 @@
 \resizebox{1\textwidth}{!}{%
 \begin{circuitikz}
 \tikzstyle{every node}=[font=\large]
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (5,5.5);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (2.5,8);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (4.5,6.5);
+\node [font=\normalsize] at (2.25,8) {z};
+\node [font=\normalsize] at (5,5.25) {x};
+\node [font=\normalsize] at (4.25,6.75) {y};
+\node [font=\normalsize] at (5,6.5) {};
 
 \node at (7.5,8) [circ] {};
-\node at (16.25,8) [circ] {};
 \node at (7.5,9.25) [circ] {};
-\node at (16.25,9.25) [circ] {};
-\node at (21.25,10.5) [circ] {};
-\node at (21.25,11.75) [circ] {};
-\node at (12.5,10.5) [circ] {};
-\node at (12.5,11.75) [circ] {};
-\draw [line width=2pt, short] (7.5,8) -- (16.25,8);
+\node at (17.5,8) [circ] {};
+\node at (17.5,9.25) [circ] {};
+\draw [line width=2pt, short] (7.5,8) -- (17.5,8);
+\draw [line width=2pt, short] (7.5,9.25) -- (17.5,9.25);
 \draw [line width=2pt, short] (7.5,9.25) -- (7.5,8);
-\draw [line width=2pt, short] (16.25,9.25) -- (16.25,8);
-\draw [line width=2pt, short] (7.5,9.25) -- (16.25,9.25);
-\draw [line width=2pt, short] (16.25,8) -- (21.25,10.5);
-\draw [line width=2pt, short] (16.25,9.25) -- (21.25,11.75);
-\draw [line width=2pt, short] (21.25,11.75) -- (21.25,10.5);
-\draw [line width=2pt, short] (7.5,9.25) -- (12.5,11.75);
-\draw [line width=2pt, short] (12.5,11.75) -- (21.25,11.75);
-\draw [line width=2pt, dashed] (7.5,8) -- (12.5,10.5);
-\draw [line width=2pt, dashed] (12.5,11.75) -- (12.5,10.5);
-\draw [line width=2pt, dashed] (12.5,10.5) -- (21.25,10.5);
-\draw [line width=0.6pt, dashed] (7.5,8) -- (5,6.75);
-\draw [line width=0.6pt, dashed] (16.25,8) -- (13.75,6.75);
-\draw [line width=0.6pt, dashed] (16.25,8) -- (18,8);
-\draw [line width=0.6pt, dashed] (21.25,10.5) -- (23,10.5);
-\draw [line width=0.6pt, dashed] (7.5,9.25) -- (6.25,9.25);
-\node [font=\normalsize] at (7.5,8) {\textbf{1}};
-\node [font=\normalsize] at (7.5,8) {\textbf{1}};
-\draw [line width=0.5pt, ->, >=Stealth] (1.5,5) -- (4,6.25);
-\draw [line width=0.5pt, ->, >=Stealth] (1.5,5) -- (1.5,8.25);
+\draw [line width=2pt, short] (17.5,9.25) -- (17.5,8);
+\draw [line width=0.3pt, dashed] (17.5,8) -- (20,8);
+\draw [line width=0.3pt, dashed] (7.5,9.25) -- (6.25,9.25);
 \node [font=\large] at (7.25,8.25) {\textbf{1}};
-\node [font=\large] at (16,8.25) {\textbf{2}};
-\node [font=\large] at (12.25,10.75) {\textbf{3}};
-\node [font=\large] at (21,10.75) {\textbf{4}};
-\node [font=\large] at (7.25,9.5) {\textbf{5}};
-\node [font=\large] at (16,9.5) {\textbf{6}};
-\node [font=\large] at (12.25,12) {\textbf{7}};
-\node [font=\large] at (21,12) {\textbf{8}};
-\node [font=\large] at (5,7.25) {10};
-\node [font=\large] at (13.75,7.25) {20};
-\node [font=\large] at (18.25,7.75) {0};
-\node [font=\large] at (23.25,10.25) {8};
+\node [font=\large] at (17.25,8.25) {\textbf{2}};
+\node [font=\large] at (20.25,7.5) {0};
 \node [font=\large] at (6,9.5) {1};
-\node [font=\large] at (1,8.25) {z};
-\node [font=\large] at (3.75,6.75) {y};
-\draw [line width=0.5pt, ->, >=Stealth] (1.5,5) -- (4.75,5);
-\node [font=\large] at (4.75,4.5) {x};
+\node at (25,11.75) [circ] {};
+\node at (15,11.75) [circ] {};
+\node at (15,13) [circ] {};
+\node at (25,13) [circ] {};
+\draw [line width=2pt, short] (17.5,8) -- (25,11.75);
+\draw [line width=2pt, short] (17.5,9.25) -- (25,13);
+\draw [line width=2pt, short] (7.5,9.25) -- (15,13);
+\draw [line width=2pt, short] (15,13) -- (25,13);
+\draw [line width=2pt, short] (25,13) -- (25,11.75);
+\draw [line width=2pt, dashed] (7.5,8) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,13) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,11.75) -- (25,11.75);
+\node [font=\large] at (14.75,12) {\textbf{3}};
+\node [font=\large] at (24.75,12) {\textbf{4}};
+\node [font=\large] at (7.25,9.5) {\textbf{5}};
+\node [font=\large] at (17.25,9.5) {\textbf{6}};
+\node [font=\large] at (14.75,13.25) {\textbf{7}};
+\node [font=\large] at (24.75,13.25) {\textbf{8}};
+\draw [line width=0.3pt, dashed] (25,11.75) -- (27.5,11.75);
+\draw [line width=0.3pt, dashed] (17.5,8) -- (15.5,6.75);
+\draw [line width=0.3pt, dashed] (7.5,8) -- (5.75,7);
+\node [font=\large] at (27.75,11.25) {8};
+\node [font=\large] at (5.25,7) {10};
+\node [font=\large] at (15.25,7) {20};
 \end{circuitikz}
 }%
-\label{fig:simple}
+
+\label{fig:single}
 \end{figure}
 
 \noindent где
@@ -483,50 +449,353 @@
 
 \noindent Значения коэффициентов $\lambda$ и $\gamma$ выбраны в виде:
 
-\begin{align}
+\begin{align*}
   \lambda &= 5 & \gamma &= 0.4
-\end{align}
+\end{align*}
 
 \noindent Решение - полином вида
 
-\begin{align}
+\begin{align*}
   u = 5 + 0.2x + y + 30z + 0.5xy + xz + 10yz + xyz
-\end{align}
+\end{align*}
 
 \noindent Исходя из этого
 
-\begin{align}
+\begin{align*}
   &f = 0.4(5 + 0.2x + y + 30z + 0.5xy + xz + 10yz + xyz) \\[1ex]
   &g = 2x + 0.04x^2 + 0.4xy + 12xz + 0.1x^2y + 0.2x^2z + 4xyz + 0.2x^2yz \\[1ex]
   &\theta|_{S_2^1} = -1 - 2.5y - 5z - 5yz \\[1ex]
   &\theta|_{S_2^2} = 5 + 2.5x + 50z + 5xz \\[1ex]
   &\theta|_{S_2^3} = 150 + 5x + 50y + 5xy
-\end{align}
+\end{align*}
 
 \noindent При условии, что $\beta = 10$:
 
-\begin{align}
+\begin{align*}
   &u_{\beta}|_{S_3^1} = 9.1 + 11.25y + 50.5z + 30.5yz \\[1ex]
   &u_{\beta}|_{S_3^2} = 4.5 - 0.05x + 25z + 0.5xz \\[1ex]
   &u_{\beta}|_{S_3^3} = -10 - 0.3x - 4y
-\end{align}
-
-\subsubsection{Подпрограмма тестирования}
-
-\inputminted[firstline=38, lastline=122]{cpp}{/home/mehandes/c/src/github.com/meha4j/math/pde/fem/sse/test/SolidStateEquationSingleElementTest.cc}
+\end{align*}
 
 \subsubsection{Результат}
 
-\begin{minted}{console}
-7.0000000e+00
-9.0000000e+00
-5.5000000e+01
-9.7000000e+01
-4.7000000e+01
-5.9000000e+01
-2.5500000e+02
-3.8700000e+02
-\end{minted}
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|X|X|X|},
+  rowspec={|c|cccccccc|}
+}
+\SetCell{c} $u(v_i)$  & \SetCell{c} $q_i$ & \SetCell{c} $|u(v_i) - q_i|$  \\
+7.0000000e+00         & 7.0000000e+00     & 1.8651747e-14                 \\
+9.0000000e+00         & 9.0000000e+00     & 5.5067062e-14                 \\
+5.5000000e+01         & 5.5000000e+01     & 1.4210855e-14                 \\
+9.7000000e+01         & 9.7000000e+01     & 7.1054274e-14                 \\
+4.7000000e+01         & 4.7000000e+01     & 1.4210855e-14                 \\
+5.9000000e+01         & 5.9000000e+01     & 4.9737992e-14                 \\
+2.5500000e+02         & 2.5500000e+02     & 0.0000000e+00                 \\
+3.8700000e+02         & 3.8700000e+02     & 5.6843419e-14
+\end{tblr}
+\caption{Теоретические и практические значения функции в узлах.}
+\end{table}
+
+\subsection{Тестирование на двух конечных элементах}
+\subsubsection{Описание задачи}
+Задачу для тестирования программы на нескольких конечных элементах получим путём разрезания
+прямоугольного параллелепипеда (\ref{fig:single}) на две части:
+
+\vspace{5mm}
+\begin{figure}[H]
+\centering
+\resizebox{1\textwidth}{!}{%
+\begin{circuitikz}
+\tikzstyle{every node}=[font=\large]
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (5,5.5);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (2.5,8);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (4.5,6.5);
+\node [font=\normalsize] at (2.25,8) {z};
+\node [font=\normalsize] at (5,5.25) {x};
+\node [font=\normalsize] at (4.25,6.75) {y};
+\node [font=\normalsize] at (5,6.5) {};
+
+\node at (7.5,8) [circ] {};
+\node at (7.5,9.25) [circ] {};
+\node at (17.5,8) [circ] {};
+\node at (17.5,9.25) [circ] {};
+\draw [line width=2pt, short] (7.5,8) -- (17.5,8);
+\draw [line width=2pt, short] (7.5,9.25) -- (17.5,9.25);
+\draw [line width=2pt, short] (7.5,9.25) -- (7.5,8);
+\draw [line width=2pt, short] (17.5,9.25) -- (17.5,8);
+\draw [line width=0.3pt, dashed] (17.5,8) -- (20,8);
+\draw [line width=0.3pt, dashed] (7.5,9.25) -- (6.25,9.25);
+\node [font=\large] at (7.25,8.25) {\textbf{1}};
+\node [font=\large] at (17.25,8.25) {\textbf{2}};
+\node [font=\large] at (20.25,7.5) {0};
+\node [font=\large] at (6,9.5) {1};
+\node at (25,11.75) [circ] {};
+\node at (15,11.75) [circ] {};
+\node at (15,13) [circ] {};
+\node at (25,13) [circ] {};
+\draw [line width=2pt, short] (17.5,8) -- (25,11.75);
+\draw [line width=2pt, short] (17.5,9.25) -- (25,13);
+\draw [line width=2pt, short] (7.5,9.25) -- (15,13);
+\draw [line width=2pt, short] (15,13) -- (25,13);
+\draw [line width=2pt, short] (25,13) -- (25,11.75);
+\draw [line width=2pt, dashed] (7.5,8) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,13) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,11.75) -- (25,11.75);
+\draw [line width=0.3pt, dashed] (25,11.75) -- (27.5,11.75);
+\draw [line width=0.3pt, dashed] (17.5,8) -- (15.5,6.75);
+\draw [line width=0.3pt, dashed] (7.5,8) -- (5.75,7);
+\node [font=\large] at (27.75,11.25) {8};
+\node [font=\large] at (5.25,7) {10};
+\node [font=\large] at (15.25,7) {20};
+\node at (21,9.75) [circ] {};
+\node at (11,9.75) [circ] {};
+\node at (11,11) [circ] {};
+\node at (21,11) [circ] {};
+\draw [line width=2pt, short] (21,11) -- (21,9.75);
+\draw [line width=2pt, short] (11,11) -- (21,11);
+\draw [line width=2pt, dashed] (11,11) -- (11,9.75);
+\draw [line width=2pt, dashed] (11,9.75) -- (21,9.75);
+\draw [line width=0.3pt, dashed] (21,9.75) -- (23.5,9.75);
+\node [font=\large] at (24,9.25) {4};
+\node [font=\large] at (10.75,10) {\textbf{3}};
+\node [font=\large] at (20.75,10) {\textbf{4}};
+\node [font=\large] at (14.75,12) {\textbf{5}};
+\node [font=\large] at (24.75,12) {\textbf{6}};
+\node [font=\large] at (7.25,9.5) {\textbf{7}};
+\node [font=\large] at (17.25,9.5) {\textbf{8}};
+\node [font=\large] at (10.75,11.25) {\textbf{9}};
+\node [font=\large] at (20.75,11.25) {\textbf{10}};
+\node [font=\large] at (14.75,13.25) {\textbf{11}};
+\node [font=\large] at (24.75,13.25) {\textbf{12}};
+\end{circuitikz}
+}%
+
+\label{fig:double}
+\end{figure}
+
+\noindent где, с учётом сохранения всех параметров задачи \ref{fig:single}:
+
+\vspace{5mm}
+\begin{align*}
+  S_2^1 &= \left[ 1, 3, 7, 9 \right] \cup \left[ 3, 5, 9, 11 \right] \\
+  S_2^2 &= \left[ 5, 6, 11, 12 \right] \\
+  S_2^3 &= \left[ 7, 8, 9, 10 \right] \cup \left[ 9, 10, 11, 12 \right] \\
+  S_3^1 &= \left[ 2, 4, 8, 10 \right] \cup \left[ 4, 6, 10, 12 \right] \\
+  S_3^2 &= \left[ 1, 2, 7, 8 \right] \\
+  S_3^3 &= \left[ 1, 2, 3, 4 \right] \cup \left[ 3, 4, 5, 6 \right]
+\end{align*}
+
+\subsubsection{Результат}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|X|X|X|},
+  rowspec={|c|cccccccccccc|}
+}
+\SetCell{c} $u(v_i)$  & \SetCell{c} $q_i$ & \SetCell{c} $|u(v_i) - q_i|$  \\
+7.0000000e+00         & 7.0000000e+00     & 9.1411323e-12                 \\
+9.0000000e+00         & 9.0000000e+00     & 5.4960481e-12                 \\
+3.1000000e+01         & 3.1000000e+01     & 1.5312196e-11                 \\
+5.3000000e+01         & 5.3000000e+01     & 1.5226931e-11                 \\
+5.5000000e+01         & 5.5000000e+01     & 2.4940050e-11                 \\
+9.7000000e+01         & 9.7000000e+01     & 1.9184654e-11                 \\
+4.7000000e+01         & 4.7000000e+01     & 6.0708771e-11                 \\
+5.9000000e+01         & 5.9000000e+01     & 5.3304916e-11                 \\
+1.5100000e+02         & 1.5100000e+02     & 4.7180038e-11                 \\
+2.2300000e+02         & 2.2300000e+02     & 3.8369308e-11                 \\
+2.5500000e+02         & 2.5500000e+02     & 5.8321348e-11                 \\
+3.8700000e+02         & 3.8700000e+02     & 4.9169557e-11
+\end{tblr}
+\caption{Теоретические и практические значения функции в узлах.}
+\end{table}
+
+\subsection{Тестирование на нерегулярной сетке}
+\subsubsection{Описание задачи}
+Удаляя один элемент из сетки \ref{fig:quad} получаем новую, нерегулярную, сетку:
+
+\vspace{5mm}
+\begin{figure}[H]
+\centering
+\resizebox{1\textwidth}{!}{%
+\begin{circuitikz}
+\tikzstyle{every node}=[font=\large]
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (5,5.5);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (2.5,8);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (4.5,6.5);
+\node [font=\normalsize] at (2.25,8) {z};
+\node [font=\normalsize] at (5,5.25) {x};
+\node [font=\normalsize] at (4.25,6.75) {y};
+\node [font=\normalsize] at (5,6.5) {};
+
+\node at (7.5,8) [circ] {};
+\node at (7.5,9.25) [circ] {};
+\draw [line width=2pt, short] (7.5,9.25) -- (7.5,8);
+\draw [line width=0.3pt, dashed] (7.5,9.25) -- (6.25,9.25);
+\node [font=\large] at (7.25,8.25) {\textbf{1}};
+\node [font=\large] at (21,7.5) {0};
+\node [font=\large] at (6,9.5) {1};
+\node at (25,11.75) [circ] {};
+\node at (15,11.75) [circ] {};
+\node at (15,13) [circ] {};
+\node at (25,13) [circ] {};
+\draw [line width=2pt, short] (7.5,9.25) -- (15,13);
+\draw [line width=2pt, short] (15,13) -- (25,13);
+\draw [line width=2pt, short] (25,13) -- (25,11.75);
+\draw [line width=2pt, dashed] (7.5,8) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,13) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,11.75) -- (25,11.75);
+\node [font=\large] at (28.5,11.25) {8};
+\node [font=\large] at (5.5,6.5) {10};
+\node [font=\large] at (15.75,6.5) {20};
+\node at (21,9.75) [circ] {};
+\node at (11,9.75) [circ] {};
+\node at (11,11) [circ] {};
+\node at (21,11) [circ] {};
+\draw [line width=2pt, short] (21,11) -- (21,9.75);
+\draw [line width=2pt, short] (11,11) -- (21,11);
+\draw [line width=2pt, dashed] (11,11) -- (11,9.75);
+\node [font=\large] at (24.75,9.25) {4};
+\node at (12.5,8) [circ] {};
+\node at (12.5,9.25) [circ] {};
+\node at (20,11.75) [circ] {};
+\node at (20,13) [circ] {};
+\draw [line width=2pt, short] (12.5,9.25) -- (12.5,8);
+\draw [line width=2pt, short] (12.5,9.25) -- (20,13);
+\draw [line width=2pt, dashed] (20,13) -- (20,11.75);
+\node at (16,9.75) [circ] {};
+\node at (16,11) [circ] {};
+\node [font=\large] at (10.75,6.5) {15};
+\node [font=\large] at (14.5,4.25) {2};
+\draw [line width=2pt, short] (12.5,8) -- (16,9.75);
+\draw [line width=2pt, short] (16,9.75) -- (21,9.75);
+\draw [line width=2pt, short] (16,11) -- (16,9.75);
+\draw [line width=2pt, short] (21,9.75) -- (25,11.75);
+\draw [line width=2pt, short] (21,11) -- (25,13);
+\draw [line width=2pt, short] (7.5,9.25) -- (12.5,9.25);
+\draw [line width=2pt, short] (7.5,8) -- (12.5,8);
+\draw [line width=2pt, dashed] (11,9.75) -- (16,9.75);
+\draw [line width=2pt, dashed] (16,9.75) -- (20,11.75);
+\draw [line width=0.3pt, dashed] (21,9.75) -- (15,6.75);
+\draw [line width=0.3pt, dashed] (12.5,8) -- (10,6.75);
+\draw [line width=0.3pt, dashed] (7.5,8) -- (5,6.75);
+\draw [line width=0.3pt, dashed] (12.5,8) -- (21.25,8);
+\draw [line width=0.3pt, dashed] (21,9.75) -- (25,9.75);
+\draw [line width=0.3pt, dashed] (25,11.75) -- (28.75,11.75);
+\node [font=\large] at (12.25,8.25) {\textbf{2}};
+\node [font=\large] at (10.75,10) {\textbf{3}};
+\node [font=\large] at (15.75,10) {\textbf{4}};
+\node [font=\large] at (20.75,10) {\textbf{5}};
+\node [font=\large] at (14.75,12) {\textbf{6}};
+\node [font=\large] at (19.75,12) {\textbf{7}};
+\node [font=\large] at (24.75,12) {\textbf{8}};
+\node [font=\large] at (7.25,9.5) {\textbf{9}};
+\node [font=\large] at (12.25,9.5) {\textbf{10}};
+\node [font=\large] at (10.75,11.25) {\textbf{11}};
+\node [font=\large] at (15.75,11.25) {\textbf{12}};
+\node [font=\large] at (20.75,11.25) {\textbf{13}};
+\node [font=\large] at (14.75,13.25) {\textbf{14}};
+\node [font=\large] at (19.75,13.25) {\textbf{15}};
+\node [font=\large] at (24.75,13.25) {\textbf{16}};
+\end{circuitikz}
+}%
+\label{fig:cut}
+\end{figure}
+\vspace{5mm}
+
+\noindent где
+
+\vspace{5mm}
+\begin{align*}
+  S_2^1 &= 
+          \left[ 1, 3, 9, 11 \right] 
+    \cup  \left[ 3, 6, 11, 14 \right] \\
+  S_2^2 &= 
+          \left[ 6, 7, 14, 15 \right] 
+    \cup  \left[ 7, 8, 15, 16 \right] \\
+  S_2^3 &= 
+          \left[ 9, 10, 11, 12 \right] 
+    \cup  \left[ 11, 12, 14, 15 \right]
+    \cup  \left[ 12, 13, 15, 16 \right] \\
+  S_3^1 &= 
+          \left[ 2, 4, 10, 12 \right] \\
+  S_3^2 &=
+          \left[ 5, 8, 13, 16 \right] \\
+  S_3^3 &= 
+          \left[ 1, 2, 9, 10 \right] \\
+  S_3^4 &=
+          \left[ 4, 5, 12, 13 \right] \\
+  S_3^5 &= 
+          \left[ 1, 2, 3, 4 \right] 
+    \cup  \left[ 3, 4, 6, 7 \right]
+    \cup  \left[ 4, 5, 7, 8 \right]
+\end{align*}
+\vspace{2mm}
+
+\noindent Значения коэффициентов $\lambda$ и $\gamma$ выберем в виде:
+
+\begin{align*}
+  \lambda &= 5 & \gamma &= 0.4
+\end{align*}
+
+\noindent Решение - полином вида
+
+\begin{align*}
+  u = x + y + z
+\end{align*}
+
+\noindent Исходя из этого
+
+\begin{align*}
+  &f = 0.4(x + y + z) \\[1ex]
+  &\theta|_{S_2^1} = -5 \\[1ex]
+  &\theta|_{S_2^2} = 5 \\[1ex]
+  &\theta|_{S_2^3} = 5
+\end{align*}
+
+\noindent При условии, что $\beta = 10$:
+
+\begin{align*}
+  &u_{\beta}|_{S_3^1} = 15.5 + y + z \\[1ex]
+  &u_{\beta}|_{S_3^2} = 20.5 + y + z \\[1ex]
+  &u_{\beta}|_{S_3^3} = -0.5 + x + z \\[1ex]
+  &u_{\beta}|_{S_3^4} = 3.5 + x + z \\[1ex]
+  &u_{\beta}|_{S_3^3} = -0.5 + x + y
+\end{align*}
+
+\subsubsection{Результат}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|X|X|X|},
+  rowspec={|c|cccccccccccccccc|}
+}
+\SetCell{c} $u(v_i)$  & \SetCell{c} $q_i$ & \SetCell{c} $|u(v_i) - q_i|$  \\
+1.0000000e+01         & 1.0000000e+01     & 1.3826046e-08                 \\
+1.5000000e+01         & 1.5000000e+01     & 2.2673152e-09                 \\
+1.4000000e+01         & 1.4000000e+01     & 1.3964442e-08                 \\
+1.9000000e+01         & 1.9000000e+01     & 6.2857062e-09                 \\
+2.4000000e+01         & 2.4000000e+01     & 7.4913942e-10                 \\
+1.8000000e+01         & 1.8000000e+01     & 2.6817538e-08                 \\
+2.3000000e+01         & 2.3000000e+01     & 7.7569489e-09                 \\
+2.8000000e+01         & 2.8000000e+01     & 3.8831587e-09                 \\
+1.1000000e+01         & 1.1000000e+01     & 1.9437577e-08                 \\
+1.6000000e+01         & 1.6000000e+01     & 1.6183801e-09                 \\
+1.5000000e+01         & 1.5000000e+01     & 3.8211160e-08                 \\
+2.0000000e+01         & 2.0000000e+01     & 9.9911013e-09                 \\
+2.5000000e+01         & 2.5000000e+01     & 1.3293956e-08                 \\
+1.9000000e+01         & 1.9000000e+01     & 8.0533272e-08                 \\
+2.4000000e+01         & 2.4000000e+01     & 3.1336366e-08                 \\
+2.9000000e+01         & 2.9000000e+01     & 2.6516851e-08
+\end{tblr}
+\caption{Теоретические и практические значения функции в узлах.}
+\end{table}
 
 \subsection{Тестирование на сетке с разрывом коэффициентов}
 \subsubsection{Описание задачи}
@@ -657,7 +926,7 @@
 \noindent При условии, что $\beta = 2$: 
 
 \begin{align*}
-  S_1 &= \left[ 1, 4, 7, 10, 13, 15 \right] & u|_{S_1} &= 0 \\
+  S_1 &= \left[ 1, 4, 7, 10 \right] \cup \left[ 7, 10, 13, 15 \right] & u|_{S_1} &= 0 \\
   S_2^1 &= \left[ 1, 2, 7, 8 \right] & \theta|_{S_2^1} &= -2x(z + 1) \\
   S_2^2 &= \left[ 7, 8, 13, 14 \right] & \theta|_{S_2^2} &= -2xz \\
   S_2^3 &= \left[ 2, 3, 8, 9 \right] & \theta|_{S_2^3} &= -2(1 + x + z + xz) \\
@@ -684,202 +953,521 @@
 \end{align*}
 \vspace{1mm}
 
-\subsection{Тестирование на сетке с внутренним узлом}
+\subsubsection{Результат}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|X|X|X|},
+  rowspec={|c|cccccccccccccccc|}
+}
+\SetCell{c} $u(v_i)$  & \SetCell{c} $q_i$ & \SetCell{c} $|u(v_i) - q_i|$  \\
+0.0000000e+00         & 3.8657408e-11     & 3.8657408e-11                 \\
+2.0000000e+00         & 2.0000000e+00     & 3.3246383e-08                 \\
+6.0000000e+00         & 6.0000001e+00     & 5.6642016e-08                 \\
+0.0000000e+00         & 3.7037040e-12     & 3.7037040e-12                 \\
+7.0000000e+00         & 7.0000000e+00     & 3.7810318e-08                 \\
+2.1000000e+01         & 2.1000000e+01     & 4.8953439e-08                 \\
+0.0000000e+00         & 3.8908562e-10     & 3.8908562e-10                 \\
+6.0000000e+00         & 6.0000002e+00     & 1.5185394e-07                 \\
+1.8000000e+01         & 1.8000000e+01     & 1.1835592e-08                 \\
+0.0000000e+00         & 9.6574022e-11     & 9.6574022e-11                 \\
+2.1000000e+01         & 2.1000000e+01     & 2.2496993e-07                 \\
+6.3000000e+01         & 6.3000000e+01     & 6.7100956e-08                 \\
+0.0000000e+00         & 4.9513885e-10     & 4.9513885e-10                 \\
+2.1000000e+01         & 2.1000002e+01     & 2.1800530e-06                 \\
+0.0000000e+00         & 1.4444437e-10     & 1.4444437e-10                 \\
+7.3500000e+01         & 7.3500003e+01     & 3.1434564e-06
+\end{tblr}
+\caption{Теоретические и практические значения функции в узлах.}
+\end{table}
+
+\subsection{Тестирование на порядок аппроксимации}
 \subsubsection{Описание задачи}
+Используя сетку \ref{fig:single} покажем, что "ненулевая" погрешность возникает уже тогда, когда степень полинома
+равна двум. Значения коэффициентов $\lambda$ и $\gamma$ выберем в виде:
+
+\begin{align*}
+  \lambda &= 5 & \gamma &= 0.4
+\end{align*}
+
+\noindent Решение - полином вида
+
+\begin{align*}
+  u = 5x^2
+\end{align*}
+
+\noindent Исходя из этого
+
+\begin{align*}
+  &f = -50 + 2x^2 \\[1ex]
+  &\theta|_{S_2^1} = -50x \\[1ex]
+  &\theta|_{S_2^2} = 0 \\[1ex]
+  &\theta|_{S_2^3} = 0
+\end{align*}
+
+\noindent При условии, что $\beta = 10$:
+
+\begin{align*}
+  &u_{\beta}|_{S_3^1} = 2000 + 50x \\[1ex]
+  &u_{\beta}|_{S_3^2} = 5x^2 \\[1ex]
+  &u_{\beta}|_{S_3^3} = 5x^2
+\end{align*}
+
+\subsubsection{Результат}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|X|X|X|},
+  rowspec={|c|cccccccc|}
+}
+\SetCell{c} $u(v_i)$  & \SetCell{c} $q_i$ & \SetCell{c} $|u(v_i) - q_i|$  \\
+5.0000000e+02         & 4.2682986e+02     & 7.3170144e+01                 \\
+2.0000000e+03         & 2.1520152e+03     & 1.5201516e+02                 \\
+5.0000000e+02         & 3.8875421e+02     & 1.1124579e+02                 \\
+2.0000000e+03         & 2.2383689e+03     & 2.3836888e+02                 \\
+5.0000000e+02         & 3.6430777e+02     & 1.3569223e+02                 \\
+2.0000000e+03         & 2.2832360e+03     & 2.8323603e+02                 \\
+5.0000000e+02         & 2.8505838e+02     & 2.1494162e+02                 \\
+2.0000000e+03         & 2.4633323e+03     & 4.6333232e+02
+\end{tblr}
+\caption{Теоретические и практические значения функции в узлах.}
+\end{table}
+
+\subsection{Тестирование на порядок сходимости}
+\subsubsection{Описание задачи}
+Для тестирования программы на порядок сходимости будем резать элементы пополам:
 
 \vspace{5mm}
 \begin{figure}[H]
 \centering
 \resizebox{1\textwidth}{!}{%
 \begin{circuitikz}
-\tikzstyle{every node}=[font=\normalsize]
-\node at (7.5,8.5) [circ] {};
-\node at (10,9.75) [circ] {};
-\node at (11.25,8.5) [circ] {};
-\node at (13.75,9.75) [circ] {};
-\node at (17.5,8.5) [circ] {};
-\node at (20,9.75) [circ] {};
-\node at (7.5,11) [circ] {};
-\node at (11.25,11) [circ] {};
-\node at (17.5,11) [circ] {};
-\node at (20,12.25) [circ] {};
-\node at (10,12.25) [circ] {};
-\node at (7.5,16) [circ] {};
-\node at (11.25,16) [circ] {};
-\draw [ line width=1.5pt](7.5,16) to[short] (7.5,8.5);
-\draw [line width=1.5pt, short] (7.5,8.5) -- (17.5,8.5);
-\draw [line width=1.5pt, short] (17.5,11) -- (17.5,8.5);
-\draw [line width=1.5pt, short] (20,12.25) -- (20,9.75);
-\draw [line width=1.5pt, short] (11.25,11) -- (11.25,8.5);
-\draw [line width=1.5pt, short] (11.25,16) -- (11.25,11);
-\draw [line width=1.5pt, short] (7.5,16) -- (11.25,16);
-\draw [line width=1.5pt, dashed] (11.25,8.5) -- (13.75,9.75);
-\draw [line width=1.5pt, dashed] (10,9.75) -- (7.5,8.5);
-\draw [line width=1.5pt, dashed] (10,9.75) -- (20,9.75);
-\node at (13.75,17.25) [circ] {};
-\node at (10,17.25) [circ] {};
-\node at (13.75,12.25) [circ] {};
-\node at (11.25,13.5) [circ] {};
-\node at (7.5,13.5) [circ] {};
-\draw [line width=1.5pt, short] (7.5,16) -- (10,17.25);
-\draw [line width=1.5pt, short] (11.25,16) -- (13.75,17.25);
-\draw [line width=1.5pt, dashed] (13.75,12.25) -- (13.75,9.75);
-\draw [line width=1.5pt, dashed] (10,12.25) -- (13.75,12.25);
-\draw [line width=1.5pt, dashed] (10,12.25) -- (7.5,11);
-\draw [line width=1.5pt, dashed] (11.25,11) -- (13.75,12.25);
-\draw [line width=1.5pt, dashed] (13.75,12.25) -- (20,12.25);
-\draw [line width=1.5pt, dashed] (10,17.25) -- (10,9.75);
-\draw [line width=1.5pt, short] (7.5,13.5) -- (17.5,13.5);
-\draw [line width=1.5pt, short] (10,17.25) -- (13.75,17.25);
-\draw [line width=1.5pt, dashed] (7.5,13.5) -- (10,14.75);
-\draw [line width=1.5pt, dashed] (10,14.75) -- (13.75,14.75);
-\draw [line width=1.5pt, short] (7.5,11) -- (17.5,11);
-\draw [line width=1.5pt, short] (20,12.25) -- (17.5,11);
-\draw [line width=1.5pt, short] (17.5,8.5) -- (20,9.75);
-\draw [line width=1.5pt, short] (17.5,13.5) -- (20,14.75);
-\draw [line width=1.5pt, short] (20,14.75) -- (20,12.25);
-\draw [line width=1.5pt, short] (17.5,13.5) -- (17.5,11);
-\node at (13.75,14.75) [circ] {};
-\node at (17.5,13.5) [circ] {};
-\node at (20,14.75) [circ] {};
-\node at (10,14.75) [circ] {};
-\draw [line width=1.5pt, short] (13.75,17.25) -- (13.75,14.75);
-\draw [line width=1.5pt, short] (11.25,13.5) -- (13.75,14.75);
-\draw [line width=1.5pt, short] (13.75,14.75) -- (20,14.75);
-\draw [line width=1.5pt, dashed] (13.75,14.75) -- (13.75,12.25);
-\node at (19,11.75) [circ] {};
-\node at (9,11.75) [circ] {};
-\node at (9,9.25) [circ] {};
-\node at (19,9.25) [circ] {};
-\node at (9,14.25) [circ] {};
-\node at (12.75,14.25) [circ] {};
-\node at (19,14.25) [circ] {};
-\node at (9,16.75) [circ] {};
-\node at (12.75,16.75) [circ] {};
-\node at (12.75,9.25) [circ] {};
-\draw [line width=1.5pt, short] (12.75,16.75) -- (12.75,14.25);
-\draw [line width=1.5pt, short] (12.75,14.25) -- (19,14.25);
-\draw [line width=1.5pt, short] (19,14.25) -- (19,9.25);
-\draw [line width=1.5pt, short] (9,16.75) -- (12.75,16.75);
-\draw [line width=1.5pt, dashed] (9,16.75) -- (9,9.5);
-\draw [line width=1.5pt, dashed] (9,9.25) -- (19,9.25);
-\draw [line width=1.5pt, dashed] (12.75,14.25) -- (12.75,9.25);
-\draw [line width=1.5pt, dashed] (9,11.75) -- (19,11.75);
-\draw [line width=1.5pt, dashed] (9,14.25) -- (12.75,14.25);
-\draw [line width=0.5pt, ->, >=Stealth] (2.5,6) -- (5,6);
-\draw [line width=0.5pt, ->, >=Stealth] (2.5,6) -- (2.5,8.5);
-\draw [line width=0.5pt, ->, >=Stealth] (2.5,6) -- (4.5,7);
-\node [font=\normalsize] at (2.25,8.5) {z};
-\node [font=\normalsize] at (5,5.75) {x};
-\node [font=\normalsize] at (4.25,7.25) {y};
-\node [font=\normalsize] at (7.25,8.75) {\textbf{1}};
-\node [font=\normalsize] at (5,7) {};
-\node [font=\normalsize] at (11,8.75) {\textbf{2}};
-\node [font=\normalsize] at (17.25,8.75) {\textbf{3}};
-\node [font=\normalsize] at (8.75,9.5) {\textbf{4}};
-\node [font=\normalsize] at (12.5,9.5) {\textbf{5}};
-\node [font=\normalsize] at (18.75,9.5) {\textbf{6}};
-\node [font=\normalsize] at (9.75,10) {\textbf{7}};
-\node [font=\normalsize] at (13.5,10) {\textbf{8}};
-\node [font=\normalsize] at (19.75,10) {\textbf{9}};
-\node [font=\normalsize] at (7.25,11.25) {\textbf{10}};
-\node [font=\normalsize] at (11,11.25) {\textbf{11}};
-\node [font=\normalsize] at (17.25,11.25) {\textbf{12}};
-\node [font=\normalsize] at (8.75,12) {\textbf{13}};
-\node [font=\normalsize] at (12.5,12) {\textbf{14}};
-\node [font=\normalsize] at (18.75,12) {\textbf{15}};
-\node [font=\normalsize] at (9.75,12.5) {\textbf{16}};
-\node [font=\normalsize] at (13.5,12.5) {\textbf{17}};
-\node [font=\normalsize] at (19.75,12.5) {\textbf{18}};
-\node [font=\normalsize] at (7.25,13.75) {\textbf{19}};
-\node [font=\normalsize] at (11,13.75) {\textbf{20}};
-\node [font=\normalsize] at (17.25,13.75) {\textbf{21}};
-\node [font=\normalsize] at (8.75,14.5) {\textbf{22}};
-\node [font=\normalsize] at (12.5,14.5) {\textbf{23}};
-\node [font=\normalsize] at (18.75,14.5) {\textbf{24}};
-\node [font=\normalsize] at (9.75,15) {\textbf{25}};
-\node [font=\normalsize] at (13.5,15) {\textbf{26}};
-\node [font=\normalsize] at (19.75,15) {\textbf{27}};
-\node [font=\normalsize] at (7.25,16.25) {\textbf{28}};
-\node [font=\normalsize] at (11,16.25) {\textbf{29}};
-\node [font=\normalsize] at (8.75,17) {\textbf{30}};
-\node [font=\normalsize] at (12.5,17) {\textbf{31}};
-\node [font=\normalsize] at (9.75,17.5) {\textbf{32}};
-\node [font=\normalsize] at (13.5,17.5) {\textbf{33}};
-\draw [line width=1pt, dashed] (10,9.75) -- (12,9.75);
-\draw [line width=0.3pt, dashed] (7.5,16) -- (6.25,16);
-\draw [line width=0.3pt, dashed] (7.5,13.5) -- (6.25,13.5);
-\draw [line width=0.3pt, dashed] (7.5,11) -- (6.25,11);
-\draw [line width=0.3pt, dashed] (7.5,8.5) -- (6.5,8);
-\draw [line width=0.3pt, dashed] (17.5,8.5) -- (18.75,8.5);
-\draw [line width=0.3pt, dashed] (20,9.75) -- (21.25,9.75);
-\draw [line width=0.3pt, dashed] (19,9.25) -- (20.25,9.25);
-\draw [line width=0.3pt, dashed] (10,9.75) -- (5,7.25);
-\draw [line width=0.3pt, dashed] (11.25,8.5) -- (8.75,7.25);
-\draw [line width=0.3pt, dashed] (17.5,8.5) -- (15,7.25);
-\node [font=\normalsize] at (5.25,7.75) {0};
-\node [font=\normalsize] at (9,7.75) {3};
-\node [font=\normalsize] at (15.25,7.75) {8};
-\node [font=\normalsize] at (19,8) {0};
-\node [font=\normalsize] at (20.5,8.75) {1.5};
-\node [font=\normalsize] at (21.75,9.5) {2.5};
-\node [font=\normalsize] at (6.25,11.25) {2};
-\node [font=\normalsize] at (6.25,13.75) {4};
-\node [font=\normalsize] at (6.25,16.25) {6};
+\tikzstyle{every node}=[font=\large]
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (5,5.5);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (2.5,8);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (4.5,6.5);
+\node [font=\normalsize] at (2.25,8) {z};
+\node [font=\normalsize] at (5,5.25) {x};
+\node [font=\normalsize] at (4.25,6.75) {y};
+\node [font=\normalsize] at (5,6.5) {};
+\node at (7.5,8) [circ] {};
+\node at (7.5,9.25) [circ] {};
+\node at (17.5,8) [circ] {};
+\node at (17.5,9.25) [circ] {};
+\draw [line width=2pt, short] (7.5,8) -- (17.5,8);
+\draw [line width=2pt, short] (7.5,9.25) -- (17.5,9.25);
+\draw [line width=2pt, short] (7.5,9.25) -- (7.5,8);
+\draw [line width=2pt, short] (17.5,9.25) -- (17.5,8);
+\draw [line width=0.3pt, dashed] (17.5,8) -- (20,8);
+\draw [line width=0.3pt, dashed] (7.5,9.25) -- (6.25,9.25);
+\node [font=\large] at (7.25,8.25) {\textbf{1}};
+\node [font=\large] at (20.25,7.5) {0};
+\node [font=\large] at (6,9.5) {1};
+\node at (25,11.75) [circ] {};
+\node at (15,11.75) [circ] {};
+\node at (15,13) [circ] {};
+\node at (25,13) [circ] {};
+\draw [line width=2pt, short] (17.5,8) -- (25,11.75);
+\draw [line width=2pt, short] (17.5,9.25) -- (25,13);
+\draw [line width=2pt, short] (7.5,9.25) -- (15,13);
+\draw [line width=2pt, short] (15,13) -- (25,13);
+\draw [line width=2pt, short] (25,13) -- (25,11.75);
+\draw [line width=2pt, dashed] (7.5,8) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,13) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,11.75) -- (25,11.75);
+\draw [line width=0.3pt, dashed] (25,11.75) -- (27.5,11.75);
+\draw [line width=0.3pt, dashed] (17.5,8) -- (15.5,6.75);
+\draw [line width=0.3pt, dashed] (7.5,8) -- (5.75,7);
+\node [font=\large] at (27.75,11.25) {8};
+\node [font=\large] at (5.25,7) {10};
+\node [font=\large] at (15.25,7) {20};
+\node at (21,9.75) [circ] {};
+\node at (11,9.75) [circ] {};
+\node at (11,11) [circ] {};
+\node at (21,11) [circ] {};
+\draw [line width=2pt, short] (21,11) -- (21,9.75);
+\draw [line width=2pt, short] (11,11) -- (21,11);
+\draw [line width=2pt, dashed] (11,11) -- (11,9.75);
+\draw [line width=2pt, dashed] (11,9.75) -- (21,9.75);
+\draw [line width=0.3pt, dashed] (21,9.75) -- (23.5,9.75);
+\node [font=\large] at (24,9.25) {4};
+\node at (12.5,8) [circ] {};
+\node at (12.5,9.25) [circ] {};
+\node at (20,11.75) [circ] {};
+\node at (20,13) [circ] {};
+\draw [line width=2pt, short] (12.5,9.25) -- (12.5,8);
+\draw [line width=2pt, short] (12.5,9.25) -- (20,13);
+\draw [line width=2pt, dashed] (12.5,8) -- (20,11.75);
+\draw [line width=2pt, dashed] (16,11) -- (16,9.75);
+\draw [line width=2pt, dashed] (20,13) -- (20,11.75);
+\node at (16,9.75) [circ] {};
+\node at (16,11) [circ] {};
+\draw [line width=0.3pt, dashed] (12.5,8) -- (11,7);
+\node [font=\large] at (12.25,8.25) {\textbf{2}};
+\node [font=\large] at (17.25,8.25) {\textbf{3}};
+\node [font=\large] at (10.75,10) {\textbf{4}};
+\node [font=\large] at (15.75,10) {\textbf{5}};
+\node [font=\large] at (20.75,10) {\textbf{6}};
+\node [font=\large] at (14.75,12) {\textbf{7}};
+\node [font=\large] at (19.75,12) {\textbf{8}};
+\node [font=\large] at (24.75,12) {\textbf{9}};
+\node [font=\large] at (7.25,9.5) {\textbf{10}};
+\node [font=\large] at (12.25,9.5) {\textbf{11}};
+\node [font=\large] at (17.25,9.5) {\textbf{12}};
+\node [font=\large] at (10.75,11.25) {\textbf{13}};
+\node [font=\large] at (15.75,11.25) {\textbf{14}};
+\node [font=\large] at (20.75,11.25) {\textbf{15}};
+\node [font=\large] at (14.75,13.25) {\textbf{16}};
+\node [font=\large] at (19.75,13.25) {\textbf{17}};
+\node [font=\large] at (24.75,13.25) {\textbf{18}};
+\node [font=\large] at (10.5,7) {15};
 \end{circuitikz}
 }%
-
-\label{fig:inner}
+\label{fig:quad}
 \end{figure}
+\vspace{5mm}
 
 \noindent где
 
+\vspace{5mm}
 \begin{align*}
-  S_1^1 &= \left[ 1, 2, 28, 29 \right] \\
-  S_1^2 &= \left[ 2, 3, 20, 21 \right] \\
-  S_1^3 &= \left[ 7, 8, 32, 33 \right] \\
-  S_1^4 &= \left[ 1, 3, 7, 9 \right] \\
-  S_1^4 &= \left[ 8, 9, 26, 27 \right] \\
-  S_2^1 &= \left[ 1, 7, 28, 32 \right] \\
-  S_2^2 &= \left[ {3, 9, 21, 27} \right] \\
-  S_3^1 &= \left[ {28, 29, 32, 33} \right] \\
-  S_3^2 &= \left[ {20, 26, 29, 33} \right] \\
-  S_3^3 &= \left[ {20, 21, 26, 27} \right] \\
+  S_2^1 &= \left[ 1, 4, 10, 13 \right] \cup \left[ 4, 7, 13, 16 \right] \\
+  S_2^2 &= \left[ 7, 8, 16, 17 \right] \cup \left[ 8, 9, 17, 18 \right] \\
+  S_2^3 &= \left[ 10, 11, 13, 14 \right] \cup \left[ 11, 12, 14, 15 \right]
+    \cup \left[ 13, 14, 16, 17 \right] \cup \left[ 14, 15, 17, 18 \right] \\
+  S_3^1 &= \left[ 3, 6, 12, 15 \right] \cup \left[ 6, 9, 15, 18 \right] \\
+  S_3^2 &= \left[ 1, 2, 10, 11 \right] \cup \left[ 2, 3, 11, 12 \right] \\
+  S_3^3 &= \left[ 1, 2, 4, 5 \right] \cup \left[ 2, 3, 5, 6 \right]
+    \cup \left[ 4, 5, 7, 8 \right] \cup \left[ 5, 6, 8, 9 \right]
+\end{align*}
+\vspace{2mm}
+
+\vspace{5mm}
+\begin{figure}[H]
+\centering
+\resizebox{1\textwidth}{!}{%
+\begin{circuitikz}
+\tikzstyle{every node}=[font=\large]
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (5,5.5);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (2.5,8);
+\draw [line width=0.5pt, ->, >=Stealth] (2.5,5.5) -- (4.5,6.5);
+\node [font=\normalsize] at (2.25,8) {z};
+\node [font=\normalsize] at (5,5.25) {x};
+\node [font=\normalsize] at (4.25,6.75) {y};
+\node [font=\normalsize] at (5,6.5) {};
+\node at (7.5,8) [circ] {};
+\node at (7.5,9.25) [circ] {};
+\node at (17.5,8) [circ] {};
+\node at (17.5,9.25) [circ] {};
+\draw [line width=2pt, short] (7.5,8) -- (17.5,8);
+\draw [line width=2pt, short] (7.5,9.25) -- (17.5,9.25);
+\draw [line width=2pt, short] (7.5,9.25) -- (7.5,8);
+\draw [line width=2pt, short] (17.5,9.25) -- (17.5,8);
+\draw [line width=0.3pt, dashed] (17.5,8) -- (20,8);
+\draw [line width=0.3pt, dashed] (7.5,9.25) -- (6.25,9.25);
+\node [font=\large] at (7.25,8.25) {\textbf{1}};
+\node [font=\large] at (19.75,7.5) {0};
+\node [font=\large] at (6,9.5) {1};
+\node at (25,11.75) [circ] {};
+\node at (15,11.75) [circ] {};
+\node at (15,13) [circ] {};
+\node at (25,13) [circ] {};
+\draw [line width=2pt, short] (17.5,8) -- (25,11.75);
+\draw [line width=2pt, short] (17.5,9.25) -- (25,13);
+\draw [line width=2pt, short] (7.5,9.25) -- (15,13);
+\draw [line width=2pt, short] (15,13) -- (25,13);
+\draw [line width=2pt, short] (25,13) -- (25,11.75);
+\draw [line width=2pt, dashed] (7.5,8) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,13) -- (15,11.75);
+\draw [line width=2pt, dashed] (15,11.75) -- (25,11.75);
+\draw [line width=0.3pt, dashed] (25,11.75) -- (27.5,11.75);
+\draw [line width=0.3pt, dashed] (17.5,8) -- (15.5,6.75);
+\draw [line width=0.3pt, dashed] (7.5,8) -- (5.75,7);
+\node [font=\large] at (27.25,11.25) {8};
+\node [font=\large] at (5.25,7) {10};
+\node [font=\large] at (15.25,7) {20};
+\node at (21,9.75) [circ] {};
+\node at (11,9.75) [circ] {};
+\node at (11,11) [circ] {};
+\node at (21,11) [circ] {};
+\draw [line width=2pt, short] (21,11) -- (21,9.75);
+\draw [line width=2pt, short] (11,11) -- (21,11);
+\draw [line width=2pt, dashed] (11,11) -- (11,9.75);
+\draw [line width=2pt, dashed] (11,9.75) -- (21,9.75);
+\draw [line width=0.3pt, dashed] (21,9.75) -- (23.5,9.75);
+\node [font=\large] at (23.25,9.25) {4};
+\node at (12.5,8) [circ] {};
+\node at (12.5,9.25) [circ] {};
+\node at (20,11.75) [circ] {};
+\node at (20,13) [circ] {};
+\draw [line width=2pt, short] (12.5,9.25) -- (12.5,8);
+\draw [line width=2pt, short] (12.5,9.25) -- (20,13);
+\draw [line width=2pt, dashed] (12.5,8) -- (20,11.75);
+\draw [line width=2pt, dashed] (16,11) -- (16,9.75);
+\draw [line width=2pt, dashed] (20,13) -- (20,11.75);
+\node at (16,9.75) [circ] {};
+\node at (16,11) [circ] {};
+\draw [line width=0.3pt, dashed] (12.5,8) -- (11,7);
+\node [font=\large] at (12.25,8.25) {\textbf{2}};
+\node [font=\large] at (17.25,8.25) {\textbf{3}};
+\node [font=\large] at (10.5,7) {15};
+\node at (9,8.75) [circ] {};
+\node at (19,8.75) [circ] {};
+\node at (19,10) [circ] {};
+\node at (9,10) [circ] {};
+\node at (24,11.25) [circ] {};
+\node at (14,11.25) [circ] {};
+\node at (14,12.5) [circ] {};
+\node at (24,12.5) [circ] {};
+\node at (14,8.75) [circ] {};
+\node at (14,10) [circ] {};
+\node at (19,11.25) [circ] {};
+\node at (19,12.5) [circ] {};
+\draw [line width=2pt, short] (19,10) -- (19,8.75);
+\draw [line width=2pt, short] (19,10) -- (9,10);
+\draw [line width=2pt, short] (24,12.5) -- (24,11.25);
+\draw [line width=2pt, short] (24,12.5) -- (14,12.5);
+\draw [line width=2pt, dashed] (14,12.5) -- (14,11.25);
+\draw [line width=2pt, dashed] (19,12.5) -- (19,11.25);
+\draw [line width=2pt, dashed] (14,11.25) -- (24,11.25);
+\draw [line width=2pt, dashed] (9,10) -- (9,8.75);
+\draw [line width=2pt, dashed] (14,10) -- (14,8.75);
+\draw [line width=2pt, dashed] (19,8.75) -- (9,8.75);
+\draw [line width=0.3pt, dashed] (24,11.25) -- (26.5,11.25);
+\draw [line width=0.3pt, dashed] (19,8.75) -- (21.5,8.75);
+\node [font=\large] at (21.25,8.25) {2};
+\node [font=\large] at (26.25,10.75) {6};
+\node [font=\large] at (8.75,9) {\textbf{4}};
+\node [font=\large] at (13.75,9) {\textbf{5}};
+\node [font=\large] at (18.75,9) {\textbf{6}};
+\node [font=\large] at (10.75,10) {\textbf{7}};
+\node [font=\large] at (15.75,10) {\textbf{8}};
+\node [font=\large] at (20.75,10) {\textbf{9}};
+\node [font=\large] at (13.75,11.5) {\textbf{10}};
+\node [font=\large] at (18.75,11.5) {\textbf{11}};
+\node [font=\large] at (23.75,11.5) {\textbf{12}};
+\node [font=\large] at (14.75,12) {\textbf{13}};
+\node [font=\large] at (19.75,12) {\textbf{14}};
+\node [font=\large] at (24.75,12) {\textbf{15}};
+\node [font=\large] at (7.25,9.5) {\textbf{16}};
+\node [font=\large] at (12.25,9.5) {\textbf{17}};
+\node [font=\large] at (17.25,9.5) {\textbf{18}};
+\node [font=\large] at (8.75,10.25) {\textbf{19}};
+\node [font=\large] at (13.75,10.25) {\textbf{20}};
+\node [font=\large] at (18.75,10.25) {\textbf{21}};
+\node [font=\large] at (10.75,11.25) {\textbf{22}};
+\node [font=\large] at (15.75,11.25) {\textbf{23}};
+\node [font=\large] at (20.75,11.25) {\textbf{24}};
+\node [font=\large] at (13.75,12.75) {\textbf{25}};
+\node [font=\large] at (18.75,12.75) {\textbf{26}};
+\node [font=\large] at (23.75,12.75) {\textbf{27}};
+\node [font=\large] at (14.75,13.25) {\textbf{28}};
+\node [font=\large] at (19.75,13.25) {\textbf{29}};
+\node [font=\large] at (24.75,13.25) {\textbf{30}};
+\end{circuitikz}
+}%
+\label{fig:octa}
+\end{figure}
+\vspace{5mm}
+
+\noindent где
+
+\vspace{5mm}
+\begin{align*}
+  S_2^1 &= 
+          \left[ 1, 4, 16, 19 \right] 
+    \cup  \left[ 4, 7, 19, 22 \right]
+    \cup  \left[ 7, 10, 22, 25 \right] 
+    \cup  \left[ 10, 13, 25, 28 \right] \\
+  S_2^2 &= 
+          \left[ 13, 14, 28, 29 \right] 
+    \cup  \left[ 14, 15, 29, 30 \right] \\
+  \begin{split}
+    S_2^3 &= 
+            \left[ 16, 17, 19, 20 \right] 
+      \cup  \left[ 17, 18, 20, 21 \right]
+      \cup  \left[ 19, 20, 22, 23 \right] 
+      \cup  \left[ 20, 21, 23, 24 \right] \\
+     &\cup  \left[ 22, 23, 25, 26 \right] 
+      \cup  \left[ 23, 24, 26, 27 \right]
+      \cup  \left[ 25, 26, 28, 29 \right] 
+      \cup  \left[ 26, 27, 29, 30 \right]
+  \end{split} \\
+  S_3^1 &= 
+          \left[ 3, 6, 18, 21 \right] 
+    \cup  \left[ 6, 9, 21, 24 \right]
+    \cup  \left[ 9, 12, 24, 27 \right]
+    \cup  \left[ 12, 15, 27, 30 \right] \\
+  S_3^2 &= 
+          \left[ 1, 2, 16, 17 \right] 
+    \cup  \left[ 2, 3, 17, 18 \right] \\
+  \begin{split}
+    S_3^3 &= 
+            \left[ 1, 2, 4, 5 \right] 
+      \cup  \left[ 2, 3, 5, 6 \right]
+      \cup  \left[ 4, 5, 7, 8 \right] 
+      \cup  \left[ 5, 6, 8, 9 \right] \\
+     &\cup  \left[ 7, 8, 10, 11 \right] 
+      \cup  \left[ 8, 9, 11, 12 \right]
+      \cup  \left[ 10, 11, 13, 14 \right] 
+      \cup  \left[ 11, 12, 14, 15 \right]
+  \end{split} \\
+\end{align*}
+\vspace{2mm}
+
+\noindent Пересчитывая значения параметров задачи \ref{fig:single} для решения вида
+
+\begin{align}
+  \label{fun} u = e^x
+\end{align}
+
+\noindent и коэффициентов $\lambda$ и $\gamma$ вида:
+
+\begin{align*}
+  \lambda &= 5 & \gamma &= 0.4
 \end{align*}
 
-\noindent Значения коэффициентов $\lambda$ и $\gamma$ выбраны в виде:
+\noindent получаем:
 
-\begin{align}
-  \lambda &= 5 & \gamma &= 0.4
-\end{align}
-
-\noindent Решение - полином вида
-
-\begin{align}
-  u = 5 + 0.2x + y + 30z + 0.5xy + xz + 10yz + xyz
-\end{align}
-
-\noindent Исходя из этого
-
-\begin{align}
-  &f = 0.4(5 + 0.2x + y + 30z + 0.5xy + xz + 10yz + xyz) \\[1ex]
-  &g = 2x + 0.04x^2 + 0.4xy + 12xz + 0.1x^2y + 0.2x^2z + 4xyz + 0.2x^2yz \\[1ex]
-  &u|_{S_1} = 0 \\[1ex]
-  &\theta|_{S_2^1} = -1 - 2.5y - 5z - 5yz \\[1ex]
-  &\theta|_{S_2^2} = 1 + 2.5y + 5z + 5yz
-\end{align}
+\begin{align*}
+  &f = -4.6e^x \\[1ex]
+  &\theta|_{S_2^1} = -5e^x \\[1ex]
+  &\theta|_{S_2^2} = 0 \\[1ex]
+  &\theta|_{S_2^3} = 0
+\end{align*}
 
 \noindent При условии, что $\beta = 10$:
 
-\begin{align}
-  &u_{\beta}|_{S_3^1} = 7xy + 6.7x + 66y + 200 \\[1ex]
-  &u_{\beta}|_{S_3^2} = 13.5yz + 2.75y + 33.5z + 5.7 \\[1ex]
-  &u_{\beta}|_{S_3^3} = 5xy + 4.7x + 46y + 140
-\end{align}
+\begin{align*}
+  &u_{\beta}|_{S_3^1} = e^{20} + 0.5e^x \\[1ex]
+  &u_{\beta}|_{S_3^2} = e^x \\[1ex]
+  &u_{\beta}|_{S_3^3} = e^x
+\end{align*}
+
+\noindent Будем находить значение функции \ref{fun} внутри конечных элементов, т.е. в точках:
+
+\begin{align*}
+  &v_1 = (12.5, 1, 0.5) \\
+  &v_2 = (17.5, 1, 0.5) \\
+  &v_3 = (12.5, 3, 0.5) \\
+  &v_4 = (17.5, 3, 0.5) \\
+  &v_5 = (12.5, 5, 0.5) \\
+  &v_6 = (17.5, 5, 0.5) \\
+  &v_7 = (12.5, 7, 0.5) \\
+  &v_8 = (17.5, 7, 0.5)
+\end{align*}
+
+\noindent При этом, полученные значения будем суммировать и сравнивать результаты, полученные на сетках 
+\ref{fig:single}, \ref{fig:double} и \ref{fig:quad}.
+
+\subsubsection{Результат}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|c|X|X|c|},
+  rowspec={|c|ccccc|}
+}
+\SetCell{c} $N$ & \SetCell{c} $\sum_i e^x$  & \SetCell{c} $\Delta$  & \SetCell{c} $k$   \\
+1               & 1103541135.393628         & 943168648.65724       & 1                 \\
+2               & 1087601714.317939         & 927229227.581551      & 1.017             \\
+4               & 683646625.629002          & 523274138.892614      & 1.802             \\
+8               & 679278116.243410          & 518905629.507022      & 1.818             \\
+$\infty$        & 160372486.736388          & -                     & -
+\end{tblr}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|c|X|X|c|},
+  rowspec={|c|ccccc|}
+}
+\SetCell{c} $N$ & \SetCell{c} $\sum_i\ln x$   & \SetCell{c} $\Delta$  & \SetCell{c} $k$   \\
+1               & 20.238581                   & 1.313137              & 1                 \\
+2               & 20.219619                   & 1.332099              & 0.986             \\
+4               & 20.421700                   & 1.130018              & 1.162             \\
+8               & 20.405835                   & 1.145883              & 1.146             \\
+$\infty$        & 21.551718                   & -                     & -
+\end{tblr}
+\end{table}
+
+\subsection{Тестирование с альтернативной правой частью}
+\subsubsection{Описание задачи}
+Допустим, что правая часть в задаче \ref{fig:cut} задана в виде производной некоторой функции. Тогда
+
+\vspace{5mm}
+\begin{align*}
+  &f = 0.4(x + y + z) \\[1ex]
+  &g = \int f dx = 0.4(\frac{1}{2}x^2 + xy + xz)
+\end{align*}
+
+\subsubsection{Результат}
+
+\begin{table}[H]
+\centering
+\begin{tblr}{
+  width=\textwidth, 
+  colspec={|X|X|X|},
+  rowspec={|c|cccccccccccccccc|}
+}
+\SetCell{c} $u(v_i)$  & \SetCell{c} $q_i$ & \SetCell{c} $|u(v_i) - q_i|$  \\
+1.0000000e+01         & 1.0038657e+01     & 3.8656629e-02                 \\
+1.5000000e+01         & 1.4965234e+01     & 3.4765846e-02                 \\
+1.4000000e+01         & 1.4053398e+01     & 5.3398238e-02                 \\
+1.9000000e+01         & 1.8983026e+01     & 1.6973564e-02                 \\
+2.4000000e+01         & 2.3990091e+01     & 9.9090079e-03                 \\
+1.8000000e+01         & 1.8041734e+01     & 4.1733749e-02                 \\
+2.3000000e+01         & 2.3001015e+01     & 1.0153923e-03                 \\
+2.8000000e+01         & 2.7970048e+01     & 2.9951847e-02                 \\
+1.1000000e+01         & 1.1070069e+01     & 7.0068685e-02                 \\
+1.6000000e+01         & 1.5939421e+01     & 6.0578995e-02                 \\
+1.5000000e+01         & 1.5105229e+01     & 1.0522865e-01                 \\
+2.0000000e+01         & 1.9967907e+01     & 3.2092698e-02                 \\
+2.5000000e+01         & 2.4982262e+01     & 1.7737670e-02                 \\
+1.9000000e+01         & 1.9083450e+01     & 8.3449511e-02                 \\
+2.4000000e+01         & 2.4000433e+01     & 4.3336116e-04                 \\
+2.9000000e+01         & 2.8943120e+01     & 5.6879922e-02
+\end{tblr}
+\caption{Теоретические и практические значения функции в узлах.}
+\end{table}
 
 
-\section{Проведенные исследования и выводы}
+\section{Проведённые исследования и выводы}
+В рамках данной курсовой работы был реализован метод конечных элементов для эллиптических задач с трилинейными 
+базисными функциями на прямоугольных параллелепипедах. Были проведены следующие исследования:
+
+\begin{enumerate}
+  \item Порядок аппроксимации;
+  \item Порядок сходимости;
+  \item Использование альтернативной формы задания правой части.
+\end{enumerate}
+
+Учитывая результаты, полученные выше, можно сделать следующие выводы:
+
+\begin{enumerate}
+  \item Используя трилинейные базисные функции, удовлетворительные результаты могут быть получены только для
+    полиномов первой степени;
+  \item Метод, построенный на трилинейных базисных функциях, обладает низким показателем сходимости;
+  \item Задание правой части в виде производной некоторой известной функции приводит к появлению дополнительной
+    погрешности в том случае, если заданная функция - полином выше первой степени.
+\end{enumerate}
+
 \section{Тексты основных модулей программ}
+\subsection{Грани}
+\inputminted{c}{/home/mehandes/c/src/github.com/paraskun/math/pde/fem/sse/src/fce.c}
+
+\subsection{Прямоугольные параллелепипеды}
+\inputminted{c}{/home/mehandes/c/src/github.com/paraskun/math/pde/fem/sse/src/hex.c}
+
+\subsection{Алгоритм}
+\inputminted{c}{/home/mehandes/c/src/github.com/paraskun/math/pde/fem/sse/src/fem.c}
 
 \end{document}
 
